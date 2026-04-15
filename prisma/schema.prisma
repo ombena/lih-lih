@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id           Int      @id @default(autoincrement())
+  name         String
+  phone_number String   @unique
+  default_lat  Decimal?
+  default_lng  Decimal?
+  created_at   DateTime @default(now())
+  
+  orders       Order[]
+}
+
+model Store {
+  id              Int       @id @default(autoincrement())
+  name            String
+  phone_number    String
+  lat             Decimal
+  lng             Decimal
+  wilaya          String?
+  baladia         String?
+  street          String?
+  address1        String?
+  address2        String?
+  sub_valid_until DateTime?
+  
+  orders          Order[]
+  menu_items      Item[]
+}
+
+// THE Store's Menu
+model Item {
+  id           Int      @id @default(autoincrement())
+  store_id     Int
+  name         String
+  description  String?
+  price        Decimal
+  is_available Boolean  @default(true)
+  
+  store        Store    @relation(fields: [store_id], references: [id])
+}
+
+model Driver {
+  id             Int      @id @default(autoincrement())
+  name           String
+  phone_number   String   @unique
+  plate_number   String
+  id_card_number String?  // National ID / Carte d'identité
+  license_number String?  // Permis de conduire
+  
+  // platform_debt was removed as per the Zero-Charge business model
+  
+  orders         Order[]
+}
+
+model Order {
+  id           Int      @id @default(autoincrement())
+  client_id    Int
+  store_id     Int
+  driver_id    Int?     // Optional because a driver isn't assigned immediately
+  status       String   @default("Pending") // Pending, Preparing, Accepted, Picked_Up, Arriving, Delivered, Cancelled
+  dropoff_lat  Decimal
+  dropoff_lng  Decimal
+  food_total   Decimal
+  delivery_fee Decimal? // Filled by the driver later
+  grand_total  Decimal? // Calculated later
+  delivery_pin String   // The 4-digit OTP
+  created_at   DateTime @default(now())
+  
+  // Relations linking to the other tables
+  client       Client   @relation(fields: [client_id], references: [id])
+  store        Store    @relation(fields: [store_id], references: [id])
+  driver       Driver?  @relation(fields: [driver_id], references: [id])
+  items        OrderItem[]
+  disputes     Dispute[]
+}
+
+model OrderItem {
+  id         Int     @id @default(autoincrement())
+  order_id   Int
+  food_name  String
+  quantity   Int
+  unit_price Decimal
+  
+  order      Order   @relation(fields: [order_id], references: [id])
+}
+
+// To handle customer support and issues
+model Dispute {
+  id          Int       @id @default(autoincrement())
+  order_id    Int
+  raised_by   String    // Who complained? 'Client', 'Store', or 'Driver'
+  reason      String    // E.g., 'Missing items', 'Client refused to pay', 'Cold food'
+  status      String    @default("Open") // Open, Investigating, Resolved
+  created_at  DateTime  @default(now())
+  resolved_at DateTime?
+  
+  order       Order     @relation(fields: [order_id], references: [id])
+}

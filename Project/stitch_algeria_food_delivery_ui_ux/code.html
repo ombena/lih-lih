@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-dim": "#f88158",
+                    "primary-dim": "#992300",
+                    "error-container": "#fb5151",
+                    "primary-fixed": "#ff7855",
+                    "primary": "#ae2900",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#56586f",
+                    "surface-container-high": "#e0e3e4",
+                    "outline-variant": "#abadae",
+                    "error-dim": "#9f0519",
+                    "on-secondary-fixed": "#3a3c52",
+                    "inverse-primary": "#ff5629",
+                    "on-tertiary-container": "#490b00",
+                    "tertiary": "#ff7855",
+                    "on-primary": "#ffefec",
+                    "on-secondary-container": "#4d4e65",
+                    "secondary-container": "#ddddf9",
+                    "primary-fixed-dim": "#ff5d32",
+                    "on-primary-fixed-variant": "#591000",
+                    "secondary-dim": "#4c4e65",
+                    "primary-container": "#ff7855",
+                    "on-error-container": "#570008",
+                    "tertiary-container": "#ffebd9",
+                    "inverse-on-surface": "#9b9d9e",
+                    "secondary-fixed": "#ddddf9",
+                    "background": "#f5f6f7",
+                    "on-secondary": "#f3f1ff",
+                    "on-primary-fixed": "#000000",
+                    "secondary": "#585a71",
+                    "secondary-fixed-dim": "#cfcfeb",
+                    "on-error": "#ffefee",
+                    "surface-variant": "#dadddf",
+                    "surface-container": "#e6e8ea",
+                    "surface-bright": "#f5f6f7",
+                    "surface": "#f5f6f7",
+                    "inverse-surface": "#0c0f10",
+                    "tertiary-fixed": "#ffebd9",
+                    "outline": "#757778",
+                    "tertiary-fixed-dim": "#f88158",
+                    "error": "#b31b25",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#595c5d",
+                    "surface-dim": "#d1d5d7",
+                    "on-background": "#2c2f30",
+                    "surface-tint": "#ae2900",
+                    "on-primary-container": "#490b00",
+                    "on-surface": "#2c2f30",
+                    "on-tertiary-fixed-variant": "#591000",
+                    "on-tertiary-fixed": "#490b00",
+                    "surface-container-highest": "#dadddf",
+                    "surface-container-low": "#eff1f2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "9999px",
+                    "lg": "9999px",
+                    "xl": "9999px",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .timeline-gradient {
+            background: linear-gradient(180deg, #ae2900 0%, #ff7855 100%);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #ae2900 0%, #ff7855 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased min-h-screen">
+<!-- TopAppBar Shell (Updated to match COMPONENTS_27) -->
+<header class="bg-white/70 dark:bg-stone-950/70 backdrop-blur-xl fixed top-0 w-full z-50 shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center px-6 py-3 w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-orange-700 dark:text-orange-500">location_on</span>
+<span class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-on-surface">Order Tracking</span>
+</div>
+<div class="text-xl font-bold tracking-tighter text-orange-800 dark:text-orange-400">Kinetic Oasis</div>
+<div class="h-10 w-10 rounded-full bg-orange-50 dark:bg-stone-900 overflow-hidden ring-2 ring-primary-container active:scale-95 duration-200 cursor-pointer">
+<img alt="User Profile" data-alt="close up professional portrait of a store manager smiling in a clean kitchen setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfbiqOETdDtSGNHfcqgm4sw0widtsTrxjKG9nTHWrUeEKObZBnDqWrGd6qxOB4V-kDhuIRJHjx6WxiSxBtjYUwR_LRtyjAPrt_uDMPptua7tDjGb4SC2nv6mBHrBYiXXHLgkWlNCDO4GRkSMj4gidKNiOUfprZC80rLB2t5vu-68M7v6e2WfHMHH1BP2WX-C8j7L3l-1QIxoaGAuXnccSBaNvVh60Yd_cLIQ4CTuAWQcMB6Or1Mo5_2PuCYf-8S6A4WSM34-c6rZE"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pt-24 pb-32 px-6 max-w-2xl mx-auto">
+<!-- Status Beacon (Updated with new tertiary orange theme) -->
+<div class="w-full bg-tertiary-container rounded-full p-8 mb-8 flex items-center justify-between overflow-hidden relative border border-primary/10">
+<div class="relative z-10">
+<p class="text-on-tertiary-fixed-variant font-bold uppercase tracking-widest text-[10px] mb-2">Current State</p>
+<h1 class="text-3xl font-black font-headline text-on-tertiary-fixed leading-none">Food Preparing</h1>
+</div>
+<span class="material-symbols-outlined text-7xl opacity-10 absolute -right-4 -bottom-2 rotate-12 text-primary" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Timeline Section -->
+<div class="md:col-span-7 space-y-6">
+<div class="bg-surface-container-lowest rounded-[2.5rem] p-8 shadow-sm">
+<h2 class="font-headline font-bold text-xl mb-8 px-2">Order Journey</h2>
+<div class="relative pl-10 space-y-12">
+<!-- Vertical Line -->
+<div class="absolute left-[13px] top-2 bottom-2 w-1.5 bg-surface-container-highest rounded-full">
+<div class="absolute top-0 left-0 w-full h-[55%] timeline-gradient rounded-full"></div>
+</div>
+<!-- Step 1 -->
+<div class="relative flex flex-col">
+<div class="absolute -left-[36px] h-7 w-7 rounded-full bg-primary border-4 border-white shadow-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-white font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Order Placed</h3>
+<p class="text-on-surface-variant text-sm">12:45 PM • Successfully received</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="relative flex flex-col">
+<div class="absolute -left-[36px] h-7 w-7 rounded-full bg-primary border-4 border-white shadow-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-white" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Food Preparing</h3>
+<p class="text-on-surface-variant text-sm">Oasis Kitchen is crafting your meal</p>
+</div>
+</div>
+<!-- Step 3 (Inactive) -->
+<div class="relative flex flex-col opacity-40">
+<div class="absolute -left-[36px] h-7 w-7 rounded-full bg-surface-container-highest border-4 border-white"></div>
+<div>
+<h3 class="font-bold text-on-surface">Out for Delivery</h3>
+<p class="text-on-surface-variant text-sm">Waiting for courier pickup</p>
+</div>
+</div>
+<!-- Step 4 (Inactive) -->
+<div class="relative flex flex-col opacity-40">
+<div class="absolute -left-[36px] h-7 w-7 rounded-full bg-surface-container-highest border-4 border-white"></div>
+<div>
+<h3 class="font-bold text-on-surface">Delivered</h3>
+<p class="text-on-surface-variant text-sm">Enjoy your meal at Kinetic Oasis</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Driver Info Placeholder -->
+<div class="bg-surface-container-lowest rounded-full p-4 pl-6 flex items-center gap-5 border border-outline-variant/10 shadow-sm">
+<div class="h-14 w-14 rounded-full bg-secondary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl">motorcycle</span>
+</div>
+<div class="flex-1">
+<p class="text-[10px] font-bold text-primary uppercase tracking-widest">Courier Assigned</p>
+<h4 class="font-headline font-bold text-lg">Picked up by Malik Z.</h4>
+</div>
+<button class="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center text-primary hover:bg-orange-100 active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined">call</span>
+</button>
+</div>
+</div>
+<!-- Side Cards (PIN & Total) -->
+<div class="md:col-span-5 space-y-6">
+<!-- PIN Block -->
+<div class="primary-gradient rounded-[2.5rem] p-8 text-center shadow-lg relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+</div>
+<p class="text-on-primary font-medium mb-2 opacity-90 text-sm">Your Delivery PIN</p>
+<div class="text-5xl font-black tracking-[0.2em] text-white font-headline">8492</div>
+<p class="text-on-primary text-xs mt-4 opacity-80 max-w-[200px] mx-auto leading-relaxed">Show this to your driver to securely confirm your order</p>
+</div>
+<!-- Price Breakdown -->
+<div class="bg-surface-container-low rounded-[2rem] p-8">
+<h3 class="font-bold mb-6 flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-xl">receipt_long</span>
+                        Order Summary
+                    </h3>
+<div class="space-y-4">
+<div class="flex justify-between text-on-surface-variant">
+<span class="text-sm font-medium">Subtotal</span>
+<span class="font-bold text-on-surface">1,450.00 DZD</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span class="text-sm font-medium">Delivery Fee</span>
+<span class="font-bold text-on-surface">150.00 DZD</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span class="text-sm font-medium">Service Fee</span>
+<span class="font-bold text-on-surface">45.00 DZD</span>
+</div>
+<div class="h-px bg-outline-variant/30 my-4"></div>
+<div class="flex justify-between items-end">
+<span class="font-bold text-lg text-on-surface">Total</span>
+<span class="font-black text-2xl text-primary font-headline">1,645.00 DZD</span>
+</div>
+</div>
+</div>
+<!-- Support Card -->
+<div class="bg-white rounded-full p-4 px-6 flex items-center justify-between border border-primary/10 shadow-sm active:scale-[0.98] transition-transform">
+<div class="flex items-center gap-4">
+<div class="h-10 w-10 bg-orange-50 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">contact_support</span>
+</div>
+<span class="font-bold text-sm tracking-tight">Need help?</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Shell (Updated to match COMPONENTS_27) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-3 pb-6 bg-white/70 dark:bg-stone-950/70 backdrop-blur-xl shadow-[0_-4px_20px_0_rgba(0,0,0,0.05)] md:hidden rounded-t-[2rem]">
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-5 py-2 hover:text-orange-600 dark:hover:text-orange-300 transition-colors active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] uppercase tracking-wider font-bold">Explore</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 rounded-full px-5 py-2 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] uppercase tracking-wider font-bold">Orders</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-5 py-2 hover:text-orange-600 dark:hover:text-orange-300 transition-colors active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined">local_offer</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] uppercase tracking-wider font-bold">Offers</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-5 py-2 hover:text-orange-600 dark:hover:text-orange-300 transition-colors active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] uppercase tracking-wider font-bold">Profile</span>
+</div>
+</nav>
+</body></html>
