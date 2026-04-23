@@ -1,46 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { OrderCard } from '../components/OrderCard';
 import { SegmentedControl } from '../components/InteractiveControls';
-
-// Mock Data for Phase 2 Development
-const MOCK_ORDERS = [
-  { 
-    id: '8492', 
-    status: 'En préparation', 
-    timeElapsed: 12, 
-    items: [
-      { quantity: 2, name: 'Tacos Poulet (Size M)' }, 
-      { quantity: 1, name: 'Canette Coca-Cola' }
-    ], 
-    notes: 'Sans Harissa, extra sauce fromagère svp', 
-    driver: null 
-  },
-  { 
-    id: '8493', 
-    status: 'En préparation', 
-    timeElapsed: 5, 
-    items: [
-      { quantity: 1, name: 'Pizza Carrée' }
-    ], 
-    notes: '', 
-    driver: { name: 'Karim D.' } 
-  },
-  { 
-    id: '8490', 
-    status: 'En attente', 
-    timeElapsed: 25, 
-    items: [
-      { quantity: 3, name: 'Tacos Viande Hachée (Size L)' }
-    ], 
-    notes: '', 
-    driver: { name: 'Amine Z.' } 
-  }
-];
+import { storeAPI } from '../services/api'; 
 
 export default function KanbanBoard() {
-  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('En préparation');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  // Fetch active orders from backend on component mount
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const data = await storeAPI.getActiveOrders(1); // Hardcoded store_id = 1 for MVP
+        
+        const formattedOrders = data.map(order => ({
+          id: order.id.toString(),
+          status: order.status,
+          timeElapsed: Math.max(0, Math.floor((new Date() - new Date(order.created_at)) / 60000)),
+          items: order.items.map(item => ({
+            quantity: item.quantity,
+            name: item.food_name
+          })),
+          notes: '',
+          driver: order.driver ? { name: order.driver.name } : null
+        }));
+        
+        setOrders(formattedOrders);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      }
+    };
+
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Responsive listener
   useEffect(() => {
@@ -49,29 +44,40 @@ export default function KanbanBoard() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const preparingOrders = orders.filter(o => o.status === 'En préparation');
-  const waitingOrders = orders.filter(o => o.status === 'En attente');
+  // Filter using English system statuses
+  const preparingOrders = orders.filter(o => o.status === 'Preparing');
+  const waitingOrders = orders.filter(o => o.status === 'Waiting');
 
-  const handleMarkReady = (id) => {
-    setOrders(prevOrders => prevOrders.map(o => o.id === id ? { ...o, status: 'En attente' } : o));
+  const handleMarkReady = async (id) => {
+    // 1. Optimistic UI update (instantly moves it on screen for a snappy feel)
+    setOrders(prevOrders => prevOrders.map(o => o.id === id ? { ...o, status: 'Waiting' } : o));
+    
+    // 2. Actually tell the database! (Prevents the 15-second teleport bug)
+    try {
+      await storeAPI.markOrderReady(id);
+    } catch (error) {
+      console.error("Failed to update DB, reverting UI...");
+      // Optional: If the request fails, you could revert the UI back to 'Preparing' here
+    }
   };
 
   const renderColumn = (title, columnOrders) => (
-    <div className="flex-1 bg-[#eff1f2] rounded-[2.5rem] p-6 h-[calc(100vh-140px)] flex flex-col">
-      <div className="flex justify-between items-center mb-6 px-2">
-        <h2 className="text-2xl font-black text-[#2c2f30] tracking-tighter">{title}</h2>
-        <span className="bg-[#ddddf9] text-[#4d4e65] px-4 py-1.5 rounded-xl text-sm font-black tracking-widest">
+    <div className="flex-1 bg-[#eff1f2] rounded-3xl p-6 min-h-[70vh]">
+      <h2 className="text-[#595c5d] font-black tracking-widest uppercase mb-6 flex items-center justify-between">
+        {title}
+        <span className="bg-[#ae2900] text-white text-xs px-3 py-1 rounded-full">
           {columnOrders.length}
         </span>
-      </div>
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-10 scrollbar-hide">
+      </h2>
+      <div className="space-y-4">
         {columnOrders.map(order => (
           <OrderCard key={order.id} order={order} onReady={handleMarkReady} />
         ))}
         {columnOrders.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-[#abadae] opacity-60 pb-20">
-            <span className="text-6xl mb-4">🍽️</span>
-            <p className="font-black tracking-widest uppercase text-sm">Aucune commande</p>
+          <div className="h-48 border-4 border-dashed border-[#ddddf9] rounded-2xl flex items-center justify-center">
+            <p className="text-[#abadae] font-bold uppercase tracking-widest text-sm">
+              Rien pour le moment
+            </p>
           </div>
         )}
       </div>
@@ -108,9 +114,9 @@ export default function KanbanBoard() {
           </div>
         </div>
       ) : (
-        <div className="flex gap-8">
-          {renderColumn('En préparation', preparingOrders)}
-          {renderColumn('En attente', waitingOrders)}
+        <div className="flex gap-8 max-w-7xl">
+          {renderColumn("En préparation", preparingOrders)}
+          {renderColumn("En attente (Livreur)", waitingOrders)}
         </div>
       )}
     </div>

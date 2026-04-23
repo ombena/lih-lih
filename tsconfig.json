@@ -5,8 +5,9 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true
+    "rootDir": "./src",
+    "outDir": "./dist"
   },
-  "include": ["src/**/*", "prisma/**/*", "lihlih-store/src/components"]
+  "include": ["src/**/*"]
 }
 

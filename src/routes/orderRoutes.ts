@@ -9,6 +9,9 @@ router.post('/', orderController.createOrder);
 // 2. Store accepts (moves to 'Preparing')
 router.patch('/:id/store-accept', orderController.storeAcceptOrder);
 
+// NEW: Store marks as ready (moves to 'Waiting')
+router.patch('/:id/ready', orderController.markOrderReady);
+
 // 3. Driver accepts (Assigns driver_id)
 router.patch('/:id/driver-accept', orderController.driverAcceptOrder);
 

@@ -6,7 +6,7 @@ import { Clock, User } from 'lucide-react';
  * Built for high visibility from a distance with massive quantities.
  */
 export const OrderCard = ({ order, onReady }) => {
-  const isPreparing = order.status === 'En préparation';
+  const isPreparing = order.status === 'Preparing';
 
   return (
     <div className={`bg-white rounded-[2.5rem] p-6 shadow-sm mb-4`}>

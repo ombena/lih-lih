@@ -38,3 +38,36 @@ export const getStoreById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch store' });
   }
 };
+
+/**
+ * Fetches active orders for the Kanban board.
+ * Includes items and driver details, ordered by oldest first.
+ */
+export const getActiveOrders = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        store_id: parseInt(id as string),
+        // We only want orders that are currently active in the kitchen
+        status: { in: ['Preparing', 'Waiting', 'Accepted_by_Driver'] }
+      },
+      include: {
+        items: true,
+        driver: true
+      },
+      orderBy: { created_at: 'desc' } // Oldest tickets first
+    });
+
+    // Map backend statuses to match the Kanban columns
+    const mappedOrders = orders.map(order => ({
+      ...order,
+      status: order.status === 'Accepted_by_Driver' ? 'Waiting' : order.status
+    }));
+
+    res.json(mappedOrders);
+  } catch (error) {
+    console.error('Error in getActiveOrders:', error);
+    res.status(500).json({ error: 'Failed to fetch active orders' });
+  }
+};

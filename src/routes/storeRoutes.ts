@@ -3,9 +3,11 @@ import * as storeController from '../controllers/storeController';
 
 const router = Router();
 
-// GET /api/stores
-router.get('/', storeController.getAllStores);
+// PUT SPECIFIC ROUTES FIRST!
+// GET /api/stores/:id/active-orders
+router.get('/:id/active-orders', storeController.getActiveOrders);
 
+// PUT DYNAMIC PARAMS LAST!
 // GET /api/stores/:id
 router.get('/:id', storeController.getStoreById);
 

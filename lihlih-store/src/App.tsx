@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-do
 import KanbanBoard from './views/KanbanBoard';
 import MenuManager from './views/MenuManager';
 import StoreSettings from './views/StoreSettings'; // Nouvelle vue importée
+import KitchenAlarm from './components/KitchenAlarm'; // 1. Import the alarm
 
 /**
  * StoreNavigation: Composant de navigation principale du tableau de bord.
@@ -35,7 +36,7 @@ export default function App() {
       <div className="flex flex-col min-h-screen bg-[#f5f6f7]">
         {/* Barre de navigation supérieure */}
         <StoreNavigation />
-
+        <KitchenAlarm storeId={1} /> 
         {/* Contenu des pages */}
         <div className="flex-1">
           <Routes>

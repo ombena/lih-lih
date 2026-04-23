@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
+import { Server } from 'socket.io';
 import prisma from '../prismaClient';
 
 /**
  * Creates a new order with multiple items.
- * Generates OTP and calculates totals on the server for security.
+ * Generates OTP, calculates totals, and EMITS REAL-TIME ALARM to the store.
  */
 export const createOrder = async (req: Request, res: Response) => {
   const { client_id, store_id, items, dropoff_lat, dropoff_lng } = req.body;
@@ -36,30 +37,50 @@ export const createOrder = async (req: Request, res: Response) => {
         data: {
           client_id,
           store_id,
-          status: "Pending",
-          dropoff_lat,
-          dropoff_lng,
-          food_total: foodTotal,
+          status: 'Pending',
           delivery_pin: deliveryPin,
-          items: {
-            create: orderItemsData
-          }
-        },
-        include: {
-          items: true
+          food_total: foodTotal,
+          delivery_fee: 0, 
+          dropoff_lat,
+          dropoff_lng
         }
       });
+
+      await tx.orderItem.createMany({
+        data: orderItemsData.map((item: any) => ({
+          order_id: newOrder.id,
+          ...item
+        }))
+      });
+
       return newOrder;
     });
 
-    res.status(201).json({
-      message: "Order placed successfully!",
-      order: result
+    // --- PHASE 4: REAL-TIME KITCHEN ALARM ---
+    // Retrieve the socket.io instance we attached in index.ts
+    const io: Server = req.app.get('io');
+    
+    // Broadcast ONLY to the specific store's room
+    io.to(`store_${store_id}`).emit('new_order', {
+      message: '🚨 NOUVELLE COMMANDE!',
+      order: {
+        id: result.id,
+        status: result.status,
+        food_total: result.food_total,
+        items: orderItemsData, // Sending the hydrated items so the tablet can display them
+        timeElapsed: 0
+      }
+    });
+    // ----------------------------------------
+
+    res.status(201).json({ 
+      message: 'Order created successfully. Store notified.', 
+      order: result 
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating order:', error);
-    res.status(500).json({ error: error.message || 'Failed to place order' });
+    res.status(500).json({ error: 'Failed to create order' });
   }
 };
 
@@ -211,5 +232,24 @@ export const getOrderDetails = async (req: Request, res: Response) => {
     res.json(order);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch order details" });
+  }
+};
+
+/**
+ * Phase 5.2: Mark Order as Ready
+ * Called by the store when cooking is finished. Moves status to 'Waiting' for courier.
+ */
+export const markOrderReady = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id as string) },
+      data: { status: 'Waiting' } // Changes the status in PostgreSQL
+    });
+
+    res.json({ message: 'Order is ready for pickup', order: updatedOrder });
+  } catch (error) {
+    console.error('Error marking order ready:', error);
+    res.status(500).json({ error: 'Failed to update order status' });
   }
 };
