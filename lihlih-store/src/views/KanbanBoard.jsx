@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { OrderCard } from '../components/OrderCard';
 import { SegmentedControl } from '../components/InteractiveControls';
 import { storeAPI } from '../services/api'; 
+import { BellRing } from 'lucide-react';
+
 
 export default function KanbanBoard() {
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('En préparation');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
 
   // Fetch active orders from backend on component mount
   useEffect(() => {
@@ -20,7 +23,7 @@ export default function KanbanBoard() {
           timeElapsed: Math.max(0, Math.floor((new Date() - new Date(order.created_at)) / 60000)),
           items: order.items.map(item => ({
             quantity: item.quantity,
-            name: item.food_name
+            name: item.food_name || item.name
           })),
           notes: '',
           driver: order.driver ? { name: order.driver.name } : null
@@ -34,8 +37,26 @@ export default function KanbanBoard() {
 
     fetchOrders();
     const interval = setInterval(fetchOrders, 15000);
-    return () => clearInterval(interval);
+
+    // NEW: Listen for the intercom shout and refresh instantly!
+    window.addEventListener('refresh_kanban', fetchOrders);
+
+    return () => {
+      clearInterval(interval);
+      // Clean up the listener when the component unmounts
+      window.removeEventListener('refresh_kanban', fetchOrders);
+    };
   }, []);
+
+  
+  const handleUnlockAudio = () => {
+    // Play and immediately pause a silent beep to unlock the browser's audio engine
+    const audio = new Audio('/alarm.mp3');
+    audio.play().then(() => {
+      audio.pause();
+      setAudioUnlocked(true);
+    }).catch(err => console.error("Audio unlock failed:", err));
+  };
 
   // Responsive listener
   useEffect(() => {
@@ -85,7 +106,20 @@ export default function KanbanBoard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f5f6f7] p-6 pt-8 font-sans">
+    <div className="min-h-screen bg-[#f5f6f7] p-6 pt-8 font-sans relative">
+      
+      {/* NEW: The Audio Unlock Banner */}
+      {!audioUnlocked && (
+        <div className="absolute top-0 left-0 right-0 bg-[#ae2900] text-white p-4 flex justify-center items-center gap-4 z-50 shadow-md">
+          <p className="font-bold">⚠️ Le son des alarmes est bloqué par le navigateur.</p>
+          <button 
+            onClick={handleUnlockAudio}
+            className="bg-white text-[#ae2900] px-4 py-2 rounded-full font-black text-sm flex items-center gap-2 hover:bg-gray-100 transition-colors"
+          >
+            <BellRing size={16} /> Activer le son
+          </button>
+        </div>
+      )}
       <header className="mb-8 flex justify-between items-end px-2">
         <div>
           <h1 className="text-4xl font-black tracking-tighter text-[#ae2900]">Tableau de cuisine</h1>

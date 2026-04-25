@@ -47,9 +47,12 @@ io.on('connection', (socket) => {
 });
 // -----------------------
 
+import itemRoutes from './routes/itemRoutes';
+
 // Routes
 app.use('/api/orders', orderRoutes);
 app.use('/api/stores', storeRoutes);
+app.use('/api/items', itemRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {

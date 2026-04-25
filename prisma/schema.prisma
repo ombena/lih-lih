@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Client {
@@ -24,9 +23,10 @@ model Client {
 model Store {
   id              Int       @id @default(autoincrement())
   name            String
-  phone_number    String
-  lat             Decimal
-  lng             Decimal
+  phone_number    String?
+  lat             Decimal?
+  lng             Decimal?
+  is_open         Boolean   @default(false)
   wilaya          String?
   baladia         String?
   street          String?
@@ -45,6 +45,8 @@ model Item {
   name         String
   description  String?
   price        Decimal
+  category     String   @default("Général")
+  stock_count  Int?     
   is_available Boolean  @default(true)
   
   store        Store    @relation(fields: [store_id], references: [id])

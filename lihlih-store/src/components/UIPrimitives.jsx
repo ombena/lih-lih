@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 /**
  * SurfaceCard: The tonal container without borders.
@@ -19,7 +19,8 @@ export const KineticButton = ({
   onClick, 
   variant = 'primary', 
   className = '',
-  fullWidth = false
+  fullWidth = false,
+  disabled = false
 }) => {
   const baseStyle = "h-[56px] px-8 rounded-xl font-black text-sm tracking-widest uppercase flex items-center justify-center transition-transform active:scale-95";
   
@@ -33,7 +34,8 @@ export const KineticButton = ({
   return (
     <button 
       onClick={onClick} 
-      className={`${baseStyle} ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
+      disabled={disabled}
+      className={`${baseStyle} ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${disabled ? 'opacity-50 cursor-not-allowed transform-none' : ''} ${className}`}
     >
       {children}
     </button>
@@ -45,7 +47,12 @@ export const KineticButton = ({
  */
 export const StatusBadge = ({ status }) => {
   const getStyles = () => {
-    switch(status?.toLowerCase()) {
+    const lowerStatus = status?.toLowerCase() || '';
+    if (lowerStatus.startsWith('position enregistrée')) {
+      return "bg-green-100 text-green-700"; // Green for GPS success
+    }
+
+    switch(lowerStatus) {
       case 'en préparation':
         return "bg-[#ffebd9] text-[#ae2900]"; // Orange/Gold
       case 'en attente':
@@ -62,5 +69,57 @@ export const StatusBadge = ({ status }) => {
     <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter inline-block ${getStyles()}`}>
       {status}
     </span>
+  );
+};
+
+/**
+ * StockBadge: Small indicator for remaining inventory of finite items.
+ */
+export const StockBadge = ({ count }) => {
+  const isLowStock = count <= 5;
+  return (
+    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ml-3 ${
+      isLowStock ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-600"
+    }`}>
+      Reste: {count}
+    </span>
+  );
+};
+
+/**
+ * OasisToast: Kinetic popup message for alerts and success states.
+ */
+export const OasisToast = ({ message, type = 'error', isVisible, onClose }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
+
+  const bgStyles = type === 'error' ? 'bg-red-500 shadow-red-500/30' : 'bg-[#ae2900] shadow-orange-500/20';
+
+  return (
+    <div 
+      className={`fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-300 transform ${
+        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'
+      }`}
+    >
+      <div className={`${bgStyles} text-white px-6 py-4 rounded-2xl shadow-xl font-black tracking-tighter flex items-center gap-3 w-max min-w-[250px] max-w-[90vw] justify-center`}>
+        {type === 'error' && (
+          <span className="flex items-center justify-center bg-white/20 rounded-full w-6 h-6 text-sm shrink-0">
+            !
+          </span>
+        )}
+        {type === 'success' && (
+          <span className="flex items-center justify-center bg-white/20 rounded-full w-6 h-6 text-sm shrink-0">
+            ✓
+          </span>
+        )}
+        <span className="text-center">{message}</span>
+      </div>
+    </div>
   );
 };

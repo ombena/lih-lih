@@ -18,19 +18,33 @@ export const createOrder = async (req: Request, res: Response) => {
     });
 
     let foodTotal = 0;
-    const orderItemsData = items.map((orderItem: any) => {
+    const orderItemsData: any[] = [];
+    
+    // Validation Check for Stock and Availability
+    for (const orderItem of items) {
       const product = dbItems.find(db => db.id === orderItem.item_id);
-      if (!product) throw new Error(`Item with ID ${orderItem.item_id} not found`);
+      if (!product) {
+        return res.status(400).json({ error: `Item with ID ${orderItem.item_id} not found` });
+      }
+      
+      if (!product.is_available) {
+        return res.status(400).json({ error: `Item ${product.name} is currently unavailable` });
+      }
+      
+      if (product.stock_count !== null && orderItem.quantity > product.stock_count) {
+        return res.status(400).json({ error: `Out of Stock: Only ${product.stock_count} left for ${product.name}` });
+      }
       
       const subtotal = Number(product.price) * orderItem.quantity;
       foodTotal += subtotal;
 
-      return {
+      orderItemsData.push({
         food_name: product.name,
         quantity: orderItem.quantity,
-        unit_price: product.price
-      };
-    });
+        unit_price: product.price,
+        item_id: product.id // Need this for the deduction later
+      });
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
@@ -49,9 +63,31 @@ export const createOrder = async (req: Request, res: Response) => {
       await tx.orderItem.createMany({
         data: orderItemsData.map((item: any) => ({
           order_id: newOrder.id,
-          ...item
+          food_name: item.food_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price
         }))
       });
+
+      // Deduction and Auto-Hide Logic
+      for (const orderItem of orderItemsData) {
+        const product = dbItems.find(db => db.id === orderItem.item_id);
+        if (product && product.stock_count !== null) {
+          const updatedItem = await tx.item.update({
+            where: { id: product.id },
+            data: { stock_count: { decrement: orderItem.quantity } }
+          });
+          
+          if (updatedItem.stock_count !== null && updatedItem.stock_count <= 0) {
+            // Auto-flip availability
+            await tx.item.update({
+              where: { id: product.id },
+              data: { is_available: false, stock_count: 0 }
+            });
+            // We will emit the WebSocket event outside the transaction
+          }
+        }
+      }
 
       return newOrder;
     });
@@ -59,6 +95,16 @@ export const createOrder = async (req: Request, res: Response) => {
     // --- PHASE 4: REAL-TIME KITCHEN ALARM ---
     // Retrieve the socket.io instance we attached in index.ts
     const io: Server = req.app.get('io');
+
+    // 2. Alert the Client Apps to hide the item instantly for items that hit zero
+    for (const orderItem of orderItemsData) {
+      const product = dbItems.find(db => db.id === orderItem.item_id);
+      if (product && product.stock_count !== null) {
+        if (product.stock_count - orderItem.quantity <= 0) {
+          io.emit('item_out_of_stock', { store_id: store_id, item_id: product.id });
+        }
+      }
+    }
     
     // Broadcast ONLY to the specific store's room
     io.to(`store_${store_id}`).emit('new_order', {

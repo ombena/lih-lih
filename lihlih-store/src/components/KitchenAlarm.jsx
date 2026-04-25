@@ -1,42 +1,31 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { storeAPI } from '../services/api'; // 1. Import the API service
+import { storeAPI } from '../services/api';
+import { X, AlertTriangle, Layers, CheckSquare, Square } from 'lucide-react';
 
-// Change this to your backend's IP address if testing on a physical tablet
-const SOCKET_URL = 'http://localhost:3000'; 
+const SOCKET_URL = 'http://localhost:3000';
 
-/**
- * KitchenAlarm: The overriding UI overlay that locks the app when an order arrives.
- * Features massive touch targets and high contrast for fast-paced environments.
- */
 export default function KitchenAlarm({ storeId = 1, onOrderAccepted }) {
-  const [incomingOrder, setIncomingOrder] = useState(null);
+  const [orderQueue, setOrderQueue] = useState([]);
+  // View states: 'alarm' | 'reasons' | 'items'
+  const [viewState, setViewState] = useState('alarm'); 
+  const [selectedMissingItems, setSelectedMissingItems] = useState([]);
   const audioRef = useRef(null);
 
+  const REJECTION_REASONS = [
+    "En rupture de stock",
+    "Ingrédient manquant",
+    "Trop de commandes",
+    "Fermeture imminente"
+  ];
+
   useEffect(() => {
-    // 1. Initialize the ringing sound (Make sure to add a loud alarm.mp3 to your public/ folder)
     audioRef.current = new Audio('/alarm.mp3');
     audioRef.current.loop = true;
 
-    // 2. Connect to the Node.js Backend
     const socket = io(SOCKET_URL);
-
-    socket.on('connect', () => {
-      console.log('🔌 Connected to LihLih Real-Time Engine');
-      // 3. Join the specific store's room so we don't hear other restaurants' orders
-      socket.emit('join_store_room', storeId);
-    });
-
-    // 4. Listen for the backend 'new_order' broadcast
-    socket.on('new_order', (data) => {
-      console.log('🚨 NEW ORDER EVENT:', data);
-      setIncomingOrder(data.order);
-      
-      // Attempt to play the loud alarm sound
-      audioRef.current?.play().catch(err => {
-        console.warn("Browser blocked audio autoplay. User must interact with the screen first.", err);
-      });
-    });
+    socket.on('connect', () => socket.emit('join_store_room', storeId));
+    socket.on('new_order', (data) => setOrderQueue(prev => [...prev, data.order]));
 
     return () => {
       socket.disconnect();
@@ -44,91 +33,155 @@ export default function KitchenAlarm({ storeId = 1, onOrderAccepted }) {
     };
   }, [storeId]);
 
+  useEffect(() => {
+    if (orderQueue.length > 0 && viewState === 'alarm') {
+      audioRef.current?.play().catch(() => {});
+    } else {
+      audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+    }
+  }, [orderQueue.length, viewState]);
+
+  const processCurrentOrderAndAdvance = () => {
+    setOrderQueue(prev => {
+      const newQueue = [...prev];
+      newQueue.shift();
+      return newQueue;
+    });
+    setViewState('alarm'); // Reset UI for the next order
+    setSelectedMissingItems([]);
+  };
+
   const handleAccept = async () => {
-    // Stop the ringing
-    audioRef.current?.pause();
-    if (audioRef.current) audioRef.current.currentTime = 0;
-    
+    const currentOrder = orderQueue[0];
+    processCurrentOrderAndAdvance(); 
     try {
-      // Phase 5: Trigger Axios PATCH to update DB to 'Preparing'
-      await storeAPI.acceptOrder(incomingOrder.id);
+      await storeAPI.acceptOrder(currentOrder.id);
+      if (onOrderAccepted) onOrderAccepted(currentOrder);
       
-      // Pass the order data up to the Kanban board so it appears in "Preparing"
-      if (onOrderAccepted) {
-        onOrderAccepted(incomingOrder);
-      }
-    } catch (error) {
-      console.error("Could not reach backend to accept order:", error);
-    } finally {
-      // Hide the alarm overlay
-      setIncomingOrder(null);
-    }
+      // NEW: Shout over the intercom to refresh the Kanban Board instantly!
+      window.dispatchEvent(new CustomEvent('refresh_kanban'));
+      
+    } catch (error) { console.error("Accept error:", error); }
   };
 
-  const handleReject = async () => {
-    // Stop the ringing
-    audioRef.current?.pause();
-    if (audioRef.current) audioRef.current.currentTime = 0;
-    
+  // Handles standard rejection AND moving to the Item Picker
+  const handleReasonSelect = async (reason) => {
+    if (reason === "Ingrédient manquant" || reason === "En rupture de stock") {
+      setViewState('items'); // Move to step 3 (Item Picker)
+      return;
+    }
+    // If it's a generic reason (e.g. Too busy), reject immediately
+    executeReject(reason, []);
+  };
+
+  // The final execution function
+  const executeReject = async (reason, missingItemsList) => {
+    const currentOrder = orderQueue[0];
+    processCurrentOrderAndAdvance();
     try {
-      // Phase 5: Trigger Axios PATCH to update DB to 'Cancelled'
-      await storeAPI.rejectOrder(incomingOrder.id);
-    } catch (error) {
-      console.error("Could not reach backend to reject order:", error);
-    } finally {
-      // Hide the alarm
-      setIncomingOrder(null);
-    }
+      await storeAPI.rejectOrder(currentOrder.id, reason, missingItemsList);
+    } catch (error) { console.error("Reject error:", error); }
   };
 
-  // If there is no incoming order, render absolutely nothing (stay hidden in the background)
-  if (!incomingOrder) return null;
+  const toggleMissingItem = (itemId) => {
+    setSelectedMissingItems(prev => 
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+    );
+  };
 
-  // --- THE FULL SCREEN ALARM OVERLAY ---
+  if (orderQueue.length === 0) return null;
+  const incomingOrder = orderQueue[0];
+
   return (
-    <div className="fixed inset-0 z-[100] bg-[#ae2900]/90 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
-      <div className="bg-[#ffebd9] rounded-[3rem] p-8 w-full max-w-2xl shadow-2xl flex flex-col items-center text-center">
-        
-        {/* Flashing Header */}
-        <div className="animate-pulse mb-2">
-          <h1 className="text-4xl md:text-6xl font-black text-[#ae2900] tracking-tighter uppercase">
-            🚨 New Order!
-          </h1>
+    <div className="fixed inset-0 z-[100] bg-[#ae2900]/95 backdrop-blur-md flex flex-col items-center justify-center p-4">
+      {orderQueue.length > 1 && (
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white text-[#ae2900] px-6 py-3 rounded-full font-black text-xl shadow-2xl flex items-center gap-3 animate-bounce">
+          <Layers size={24} /> {orderQueue.length - 1} autre(s) commande(s) en attente !
         </div>
-        
-        <h2 className="text-7xl md:text-8xl font-black text-[#2c2f30] tracking-tighter mb-8">
-          #{incomingOrder.id}
-        </h2>
-        
-        {/* Massive Item List for easy reading from a distance */}
-        <div className="w-full bg-white rounded-3xl p-6 mb-8 text-left space-y-4 shadow-inner max-h-[40vh] overflow-y-auto">
-          {incomingOrder.items?.map((item, idx) => (
-            <div key={idx} className="flex items-start text-2xl md:text-3xl leading-tight">
-              <span className="font-black text-[#ae2900] mr-4">{item.quantity}x</span>
-              <span className="font-bold text-[#2c2f30]">{item.food_name}</span>
-            </div>
-          ))}
-          {/* Fallback for testing if items array is empty */}
-          {(!incomingOrder.items || incomingOrder.items.length === 0) && (
-            <div className="text-xl font-bold text-gray-400">Loading items...</div>
-          )}
-        </div>
+      )}
 
-        {/* Giant Fat-Finger Action Buttons */}
-        <div className="flex flex-col w-full gap-4">
-          <button 
-            onClick={handleAccept}
-            className="w-full h-24 bg-green-500 rounded-2xl text-white font-black text-2xl md:text-3xl uppercase tracking-widest shadow-xl active:scale-95 transition-transform"
-          >
-            Accept (Start Cooking)
-          </button>
-          <button 
-            onClick={handleReject}
-            className="w-full h-16 bg-transparent text-[#ae2900] border-4 border-[#ae2900] rounded-2xl font-black text-lg md:text-xl uppercase tracking-widest active:scale-95 transition-transform"
-          >
-            Reject (Out of Stock)
-          </button>
-        </div>
+      <div className="bg-white rounded-[3rem] p-8 w-full max-w-xl shadow-2xl relative overflow-hidden min-h-[500px] flex flex-col justify-center">
+        
+        {viewState === 'alarm' && (
+          <div className="animate-in fade-in zoom-in duration-300">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-black text-[#ae2900] uppercase animate-pulse">Nouvelle Commande!</h1>
+              <span className="text-7xl font-black text-[#2c2f30]">#{incomingOrder.id}</span>
+            </div>
+            <div className="bg-[#eff1f2] rounded-3xl p-6 mb-8 max-h-[35vh] overflow-y-auto">
+              {incomingOrder.items?.map((item, idx) => (
+                <div key={idx} className="flex items-start text-2xl mb-2">
+                  <span className="font-black text-[#ae2900] mr-4">{item.quantity}x</span>
+                  <span className="font-bold text-[#2c2f30]">{item.food_name || item.name}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col gap-4">
+              <button onClick={handleAccept} className="w-full h-24 bg-green-500 rounded-2xl text-white font-black text-2xl uppercase shadow-xl active:scale-95 transition-all">Accepter</button>
+              <button onClick={() => setViewState('reasons')} className="w-full h-16 border-4 border-[#ae2900] text-[#ae2900] rounded-2xl font-black text-xl uppercase active:scale-95 transition-all">Refuser...</button>
+            </div>
+          </div>
+        )}
+
+        {viewState === 'reasons' && (
+          <div className="animate-in slide-in-from-right duration-300">
+            <button onClick={() => setViewState('alarm')} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full"><X size={24} /></button>
+            <div className="flex items-center gap-3 mb-6">
+              <AlertTriangle className="text-[#ae2900]" size={32} />
+              <h2 className="text-2xl font-black text-[#2c2f30]">Motif du refus ?</h2>
+            </div>
+            <div className="grid grid-cols-1 gap-3 mb-8">
+              {REJECTION_REASONS.map(reason => (
+                <button key={reason} onClick={() => handleReasonSelect(reason)} className="w-full py-5 px-6 bg-[#eff1f2] hover:bg-[#ae2900] hover:text-white rounded-2xl text-left font-bold text-xl transition-colors active:scale-[0.98]">
+                  {reason}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setViewState('alarm')} className="w-full py-4 text-[#595c5d] font-black uppercase tracking-widest text-sm">Retour</button>
+          </div>
+        )}
+
+        {/* NEW: Step 3 - The Item Picker */}
+        {viewState === 'items' && (
+          <div className="animate-in slide-in-from-right duration-300">
+            <button onClick={() => setViewState('reasons')} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full"><X size={24} /></button>
+            <div className="flex items-center gap-3 mb-2">
+              <AlertTriangle className="text-[#ae2900]" size={32} />
+              <h2 className="text-2xl font-black text-[#2c2f30]">Qu'est-ce qui manque ?</h2>
+            </div>
+            <p className="text-[#595c5d] font-bold mb-6">Sélectionnez les articles indisponibles pour prévenir le client.</p>
+            
+            <div className="bg-[#eff1f2] rounded-3xl p-4 mb-8 max-h-[35vh] overflow-y-auto space-y-2">
+              {incomingOrder.items?.map((item, idx) => {
+                // Determine item ID safely based on your specific Prisma schema
+                const id = item.item_id || item.id || idx; 
+                const isSelected = selectedMissingItems.includes(id);
+                return (
+                  <div 
+                    key={idx} 
+                    onClick={() => toggleMissingItem(id)}
+                    className={`flex items-center p-4 rounded-2xl cursor-pointer border-4 transition-all ${isSelected ? 'border-[#ae2900] bg-white' : 'border-transparent hover:bg-white'}`}
+                  >
+                    {isSelected ? <CheckSquare className="text-[#ae2900] mr-4" size={28} /> : <Square className="text-[#abadae] mr-4" size={28} />}
+                    <span className={`font-black text-xl ${isSelected ? 'text-[#ae2900] line-through' : 'text-[#2c2f30]'}`}>
+                      {item.quantity}x {item.food_name || item.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button 
+              disabled={selectedMissingItems.length === 0}
+              onClick={() => executeReject("Ingrédient manquant", selectedMissingItems)}
+              className={`w-full h-20 rounded-2xl text-white font-black text-2xl uppercase transition-all ${selectedMissingItems.length > 0 ? 'bg-[#ae2900] shadow-xl active:scale-95' : 'bg-[#abadae] cursor-not-allowed'}`}
+            >
+              Confirmer le refus
+            </button>
+            <button onClick={() => setViewState('reasons')} className="w-full py-4 text-[#595c5d] font-black uppercase tracking-widest text-sm mt-2">Retour</button>
+          </div>
+        )}
 
       </div>
     </div>
