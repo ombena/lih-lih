@@ -20,6 +20,44 @@ export const getAllStores = async (req: Request, res: Response) => {
 };
 
 /**
+ * Fetches stores for the Discovery Feed based on wilaya and baladia.
+ * Filters for open stores only.
+ */
+export const getDiscoveryFeed = async (req: Request, res: Response) => {
+  const { wilaya, baladia } = req.query;
+
+  try {
+    const stores = await prisma.store.findMany({
+      where: {
+        wilaya: wilaya as string,
+        baladia: baladia as string,
+        is_open: true, // Only show open stores in the feed
+      },
+        select: {
+          id: true,
+          name: true,
+          image_url: true,
+          rating: true,
+          prep_time: true,
+          tags: true,
+          review_count: true,
+          total_orders_count: true,
+          sum_quality: true,
+          sum_accuracy: true,
+          sum_packaging: true,
+          sum_value: true,
+          sum_speed: true,
+        }
+      });
+
+    res.json(stores);
+  } catch (error) {
+    console.error('Error in getDiscoveryFeed:', error);
+    res.status(500).json({ error: 'Failed to fetch discovery feed' });
+  }
+};
+
+/**
  * Fetches a single store by its ID.
  */
 export const getStoreById = async (req: Request, res: Response) => {
@@ -27,7 +65,19 @@ export const getStoreById = async (req: Request, res: Response) => {
   try {
     const store = await prisma.store.findUnique({
       where: { id: parseInt(id as string) },
-      include: { menu_items: true },
+      include: { 
+        menu_items: true,
+        reviews: {
+          take: 10,
+          orderBy: { created_at: 'desc' },
+          include: {
+            client: {
+              select: { name: true }
+            }
+          }
+        },
+        // We get total_orders_count automatically since we didn't specify select
+      },
     });
 
     if (!store) {
@@ -204,7 +254,7 @@ export const updateMenuItem = async (req: Request, res: Response) => {
  */
 export const updateStoreProfile = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, phone_number, wilaya, baladia, street, lat, lng } = req.body;
+  const { name, phone_number, wilaya, baladia, street, lat, lng, tags, image_url, rating, prep_time } = req.body;
 
   try {
     const updatedStore = await prisma.store.update({
@@ -217,6 +267,10 @@ export const updateStoreProfile = async (req: Request, res: Response) => {
         street,
         lat: lat !== undefined && lat !== null ? new Prisma.Decimal(lat) : undefined,
         lng: lng !== undefined && lng !== null ? new Prisma.Decimal(lng) : undefined,
+        tags: tags !== undefined ? tags : undefined,
+        image_url: image_url !== undefined ? image_url : undefined,
+        rating: rating !== undefined ? Number(rating) : undefined,
+        prep_time: prep_time !== undefined ? prep_time : undefined,
       }
     });
 

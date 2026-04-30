@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kinetic Oasis - Discovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-dim": "#75318e",
+                    "primary-dim": "#992300",
+                    "error-container": "#fb5151",
+                    "primary-fixed": "#ff7855",
+                    "primary": "#ae2900",
+                    "on-tertiary": "#ffedfe",
+                    "on-secondary-fixed-variant": "#56586f",
+                    "surface-container-high": "#e0e3e4",
+                    "outline-variant": "#abadae",
+                    "error-dim": "#9f0519",
+                    "on-secondary-fixed": "#3a3c52",
+                    "inverse-primary": "#ff5629",
+                    "on-tertiary-container": "#52076c",
+                    "tertiary": "#823e9b",
+                    "on-primary": "#ffefec",
+                    "on-secondary-container": "#4d4e65",
+                    "secondary-container": "#ddddf9",
+                    "primary-fixed-dim": "#ff5d32",
+                    "on-primary-fixed-variant": "#591000",
+                    "secondary-dim": "#4c4e65",
+                    "primary-container": "#ff7855",
+                    "on-error-container": "#570008",
+                    "tertiary-container": "#e094f8",
+                    "inverse-on-surface": "#9b9d9e",
+                    "secondary-fixed": "#ddddf9",
+                    "background": "#f5f6f7",
+                    "on-secondary": "#f3f1ff",
+                    "on-primary-fixed": "#000000",
+                    "secondary": "#585a71",
+                    "secondary-fixed-dim": "#cfcfeb",
+                    "on-error": "#ffefee",
+                    "surface-variant": "#dadddf",
+                    "surface-container": "#e6e8ea",
+                    "surface-bright": "#f5f6f7",
+                    "surface": "#f5f6f7",
+                    "inverse-surface": "#0c0f10",
+                    "tertiary-fixed": "#e094f8",
+                    "outline": "#757778",
+                    "tertiary-fixed-dim": "#d187e9",
+                    "error": "#b31b25",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#595c5d",
+                    "surface-dim": "#d1d5d7",
+                    "on-background": "#2c2f30",
+                    "surface-tint": "#ae2900",
+                    "on-primary-container": "#490b00",
+                    "on-surface": "#2c2f30",
+                    "on-tertiary-fixed-variant": "#5c1675",
+                    "on-tertiary-fixed": "#2d003e",
+                    "surface-container-highest": "#dadddf",
+                    "surface-container-low": "#eff1f2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none flex items-center justify-between px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-orange-600 dark:text-orange-400" data-icon="location_on">location_on</span>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Current Location</span>
+<span class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-on-surface">El Bayadh Center</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="text-xl font-extrabold text-orange-600 dark:text-orange-400 font-headline">Kinetic Oasis</div>
+<div class="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border-2 border-primary-container">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Portrait of a professional young man in casual attire with a friendly expression, soft natural lighting, urban office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfsAoff793g685Cspsbkc0LANSa0ZoMGKB4hFZos8KoNYc0K5Ds0kO8QC2bl1826inxdBYUJur7lLmL4xyl2ZJGHd3ihS943NEsA1mvgDVHoL7Q_I8TDxTf72lhlBufPtJBsfPjg9wthjIN-mUQl7WOaJVc5JK0tZ0LY8IGPcH8Ny0ub7YjcymAJxle3kQcL2jUQHm1YjILXOnZTz77DJeZp8aLOUc6oCZv59a9pxI8i-ue0jLneJ1tVs9-VZX8OkXCk6MSWrb6wc"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-5xl mx-auto">
+<!-- Search Section -->
+<section class="mb-10">
+<div class="relative group">
+<div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline" data-icon="search">search</span>
+</div>
+<input class="w-full h-14 pl-14 pr-6 bg-surface-container-lowest rounded-xl border-none shadow-sm focus:ring-2 focus:ring-primary text-on-surface placeholder:text-outline/60 font-medium transition-all" placeholder="Search for food or stores" type="text"/>
+<div class="absolute inset-y-2 right-2">
+<button class="h-10 px-4 bg-primary text-on-primary rounded-lg font-bold text-sm transition-all active:scale-95">Filter</button>
+</div>
+</div>
+</section>
+<!-- Status Beacon (Specialized Component) -->
+<div class="w-full mb-10 p-6 bg-tertiary-container text-on-tertiary-container rounded-2xl flex items-center justify-between shadow-sm">
+<div>
+<h2 class="text-2xl font-['Plus_Jakarta_Sans'] font-black leading-tight">Flash Deals!</h2>
+<p class="text-sm font-semibold opacity-90">Up to 40% off in Algiers Central today</p>
+</div>
+<span class="material-symbols-outlined text-4xl" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<!-- Categories Section -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline text-xl font-extrabold tracking-tight">Quick Categories</h3>
+<button class="text-primary font-bold text-sm">View All</button>
+</div>
+<div class="flex gap-6 overflow-x-auto hide-scrollbar pb-2">
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-3 min-w-[80px] group cursor-pointer">
+<div class="w-20 h-20 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-primary-container">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="local_pizza">local_pizza</span>
+</div>
+<span class="font-['Inter'] text-sm font-semibold text-on-surface-variant">Pizza</span>
+</div>
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-3 min-w-[80px] group cursor-pointer">
+<div class="w-20 h-20 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-primary-container">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="lunch_dining">lunch_dining</span>
+</div>
+<span class="font-['Inter'] text-sm font-semibold text-on-surface-variant">Burgers</span>
+</div>
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-3 min-w-[80px] group cursor-pointer">
+<div class="w-20 h-20 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-primary-container">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="taco">tapas</span>
+</div>
+<span class="font-['Inter'] text-sm font-semibold text-on-surface-variant">Tacos</span>
+</div>
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-3 min-w-[80px] group cursor-pointer">
+<div class="w-20 h-20 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-primary-container">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="soup_kitchen">soup_kitchen</span>
+</div>
+<span class="font-['Inter'] text-sm font-semibold text-on-surface-variant">Traditional</span>
+</div>
+<!-- Category Item -->
+<div class="flex flex-col items-center gap-3 min-w-[80px] group cursor-pointer">
+<div class="w-20 h-20 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-primary-container">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="icecream">icecream</span>
+</div>
+<span class="font-['Inter'] text-sm font-semibold text-on-surface-variant">Desserts</span>
+</div>
+</div>
+</section>
+<!-- Restaurant Feed (Bento Style) -->
+<section>
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-headline text-2xl font-black tracking-tight">Nearby Oasis</h3>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-container-high rounded-full text-xs font-bold text-on-surface-variant">Popular</span>
+<span class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold">Fastest</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Featured Card -->
+<div class="group cursor-pointer">
+<div class="relative h-64 w-full rounded-2xl overflow-hidden shadow-lg mb-4">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Gourmet mediterranean kitchen interior with warm lighting, artisan dishes being prepared, rustic elegant atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1ExNr-E9sHzWxzQtgyG_w5Rd-ntm9dYptvvlukY0pz1FteIjZheKgQL0XCecXkrv7B-29jaywmB5GMhI3wHhjxVIEn2gqQAdipl6S-WSuAkcfTWDLyCJ3x2dTAzMuQwzy73Z2IJg6VtbTRyfEXjbk3t_37gP3O3I1e2BHtlOoSO9TeylZnvDEDN9cZFwE17iSoD7VArGs0XtaekLGAVnITSYzGom9WLZtJ5lzCvgjlQ-MIpfdBfQJbjayKBxKxGhP8Gg2srPXz_k"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold text-on-surface">4.5</span>
+</div>
+<div class="absolute bottom-4 left-4 right-4 bg-black/40 backdrop-blur-md p-4 rounded-xl border border-white/20">
+<h4 class="text-white font-headline font-bold text-lg">Oasis Kitchen</h4>
+<p class="text-white/80 text-xs font-medium">Traditional Algerian &amp; Mediterranean Fusion</p>
+</div>
+</div>
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="schedule">schedule</span>
+<span class="text-xs font-bold uppercase tracking-wider">20-30 min</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="delivery_dining">delivery_dining</span>
+<span class="text-xs font-bold uppercase tracking-wider">Free</span>
+</div>
+</div>
+<button class="text-primary">
+<span class="material-symbols-outlined" data-icon="add_circle" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+</button>
+</div>
+</div>
+<!-- Secondary Card -->
+<div class="group cursor-pointer">
+<div class="relative h-64 w-full rounded-2xl overflow-hidden shadow-lg mb-4">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Vibrant burger bar scene with stacked gourmet cheeseburgers, crispy golden fries, neon lighting accents, high contrast professional food photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEToMfEHMERArweUF3bmzBJYiD0J3NIDGdAFtuubSYiMnAt0zhBTXoqYLiHRxy7VIlBcb9jhGuQ7q939P372RdbnqW5odT71Ry_qeMPSRF6hkYpYywwzcv7c6CRrMIq0r8FWxANluqLPRFEaryb8HQiqJ7C389RpHuV_0DD50EBpZ05_dBZQFMf8ej8h8mZIJ0U3DZWpJjvPE9n3UQ9MXadEtqxMeTajUXWemhNzfsoAqP8mq_RN2QlyqbDu6AGGLnyIrb6OmxSU8"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold text-on-surface">4.2</span>
+</div>
+<div class="absolute bottom-4 left-4 right-4 bg-black/40 backdrop-blur-md p-4 rounded-xl border border-white/20">
+<h4 class="text-white font-headline font-bold text-lg">Zesty Burgers</h4>
+<p class="text-white/80 text-xs font-medium">Flame-grilled Beef &amp; Signature Sauces</p>
+</div>
+</div>
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="schedule">schedule</span>
+<span class="text-xs font-bold uppercase tracking-wider">15-25 min</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="delivery_dining">delivery_dining</span>
+<span class="text-xs font-bold uppercase tracking-wider">150 DZD</span>
+</div>
+</div>
+<button class="text-primary">
+<span class="material-symbols-outlined" data-icon="add_circle" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+</button>
+</div>
+</div>
+<!-- Small Grid Card 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-2xl flex items-center gap-4 shadow-sm group cursor-pointer hover:shadow-md transition-all">
+<div class="w-24 h-24 rounded-xl overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close up of artisanal pizza with fresh mozzarella and basil leaves, stone-baked crust, steam rising, professional culinary lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVtY-hHuxzlbuNy5i7AoFw7fAVAqmDtXSt2RMPbQoleoILhr5rEUDRIYC99UGZ39f60-7BGuz-OcGHBdl9edK9bOfkqb6w3LNMjd_TSX_f-eJd-K4AWqDBs_INei4YcNJj6ycXcnXzwSMc7obvD-Ej7MqbGeZuNJbSHMtZwLBqlFD7Iv4Lsjd7UET3V4m6DYH8M1rz81M8KsVqjFW6a62XgzNGYR8Pdq_4h8rfJfk6qrVmC-i9ZrSILl1QjeelTHbt0Sj_dtB8SJA"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-bold font-headline text-on-surface">Pizza Express</h5>
+<span class="text-xs font-bold text-primary">4.8</span>
+</div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest mb-3">Wood Fired • 20 Min</p>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-md text-[10px] font-bold">PROMO</span>
+<span class="text-[10px] text-outline font-medium">From 800 DZD</span>
+</div>
+</div>
+</div>
+<!-- Small Grid Card 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-2xl flex items-center gap-4 shadow-sm group cursor-pointer hover:shadow-md transition-all">
+<div class="w-24 h-24 rounded-xl overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Traditional Algerian Couscous with slow-cooked vegetables and lamb in a colorful ceramic bowl, authentic North African presentation" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcQEyvHrW8Av-tHGe9xC8CV-6a-8fo_8YjQCNjqdhqgVEqvqrfdfMrZKfG79z4je6MK-VNK3i_UZW7teZXqEejydJhnnTM_FSrJu2Q9stKbA5kGk5choi1-ETu37nl4nYbM9ZIKzOHu-46aCCcdLq5EUGV5jfrfBwQy2L-WH6etc4jyvxKhMX0I-nlO-hkMAksiC6Ojs2wgrga3Jpex4Cy10K4j5AD1Rmw61JlqwJkTHQeMa0aXyYcxXGSjsBoVHT70dnLUtXU3vY"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-bold font-headline text-on-surface">Tassili Flavors</h5>
+<span class="text-xs font-bold text-primary">4.6</span>
+</div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest mb-3">Traditional • 45 Min</p>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-orange-100 text-orange-800 rounded-md text-[10px] font-bold">BEST SELLER</span>
+<span class="text-[10px] text-outline font-medium">From 1200 DZD</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center pb-6 pt-3 px-4 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-lg shadow-[0_-8px_32px_rgba(0,0,0,0.06)] rounded-t-[2rem]">
+<a class="flex flex-col items-center justify-center bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-200 rounded-2xl px-5 py-2" href="#">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-['Inter'] text-xs font-semibold mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-orange-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-['Inter'] text-xs font-semibold mt-1">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-orange-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+<span class="font-['Inter'] text-xs font-semibold mt-1">Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-orange-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Inter'] text-xs font-semibold mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

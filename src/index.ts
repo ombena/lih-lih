@@ -41,6 +41,11 @@ io.on('connection', (socket) => {
     console.log(`🏠 Socket ${socket.id} joined room: store_${storeId}`);
   });
 
+  socket.on('join_client_room', (clientId) => {
+    socket.join(`client_${clientId}`);
+    console.log(`📱 Client ${socket.id} joined room: client_${clientId}`);
+  });
+
   socket.on('disconnect', () => {
     console.log(`🔌 Client disconnected: ${socket.id}`);
   });
@@ -48,11 +53,13 @@ io.on('connection', (socket) => {
 // -----------------------
 
 import itemRoutes from './routes/itemRoutes';
+import reviewRoutes from './routes/reviewRoutes';
 
 // Routes
 app.use('/api/orders', orderRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/items', itemRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {

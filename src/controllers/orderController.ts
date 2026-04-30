@@ -140,6 +140,15 @@ export const storeAcceptOrder = async (req: Request, res: Response) => {
       where: { id: parseInt(id as string) },
       data: { status: 'Preparing' }
     });
+
+    // Notify Client
+    const io: Server = req.app.get('io');
+    io.to(`client_${order.client_id}`).emit('order_status_updated', {
+      order_id: order.id,
+      new_status: 'Preparing',
+      updated_at: new Date()
+    });
+
     res.json({ message: 'Order is now being prepared', order });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update order status' });
@@ -164,6 +173,14 @@ export const driverAcceptOrder = async (req: Request, res: Response) => {
         driver_id: parseInt(driver_id),
         status: 'Accepted_by_Driver'
       }
+    });
+
+    // Notify Client
+    const io: Server = req.app.get('io');
+    io.to(`client_${updatedOrder.client_id}`).emit('order_status_updated', {
+      order_id: updatedOrder.id,
+      new_status: 'Accepted_by_Driver',
+      updated_at: new Date()
     });
 
     res.json({ message: 'Order successfully assigned to you!', order: updatedOrder });
@@ -198,6 +215,14 @@ export const driverPickupOrder = async (req: Request, res: Response) => {
       }
     });
 
+    // Notify Client
+    const io: Server = req.app.get('io');
+    io.to(`client_${updatedOrder.client_id}`).emit('order_status_updated', {
+      order_id: updatedOrder.id,
+      new_status: 'Picked_Up',
+      updated_at: new Date()
+    });
+
     res.json({ message: 'Pickup confirmed. Final total updated.', order: updatedOrder });
   } catch (error) {
     res.status(500).json({ error: 'Failed to confirm pickup' });
@@ -226,10 +251,33 @@ export const completeOrder = async (req: Request, res: Response) => {
     }
 
     // 2. Mark order as delivered
-    // We removed the platform_debt update logic here as per the "zero-charge" plan.
     const updatedOrder = await prisma.order.update({
       where: { id: parseInt(id as string) },
-      data: { status: 'Delivered' }
+      data: { status: 'Delivered' },
+      include: { order_items: true }
+    });
+
+    // 3. Social Proof Aggregation (Atomic Increments)
+    // Update Store total orders
+    await prisma.store.update({
+      where: { id: order.store_id },
+      data: { total_orders_count: { increment: 1 } }
+    });
+
+    // Update individual Item sales counts
+    for (const item of updatedOrder.order_items) {
+      await prisma.item.update({
+        where: { id: item.item_id },
+        data: { total_sold_count: { increment: item.quantity } }
+      });
+    }
+
+    // Notify Client
+    const io: Server = req.app.get('io');
+    io.to(`client_${updatedOrder.client_id}`).emit('order_status_updated', {
+      order_id: updatedOrder.id,
+      new_status: 'Delivered',
+      updated_at: new Date()
     });
 
     res.json({ 
@@ -249,10 +297,19 @@ export const completeOrder = async (req: Request, res: Response) => {
 export const arrivingNotification = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    await prisma.order.update({
+    const updatedOrder = await prisma.order.update({
       where: { id: parseInt(id as string) },
       data: { status: 'Arriving' }
     });
+
+    // Notify Client
+    const io: Server = req.app.get('io');
+    io.to(`client_${updatedOrder.client_id}`).emit('order_status_updated', {
+      order_id: updatedOrder.id,
+      new_status: 'Arriving',
+      updated_at: new Date()
+    });
+
     res.json({ message: 'Client has been notified that you are arriving.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to send notification' });
@@ -293,9 +350,42 @@ export const markOrderReady = async (req: Request, res: Response) => {
       data: { status: 'Waiting' } // Changes the status in PostgreSQL
     });
 
+    // Notify Client
+    const io: Server = req.app.get('io');
+    io.to(`client_${updatedOrder.client_id}`).emit('order_status_updated', {
+      order_id: updatedOrder.id,
+      new_status: 'Waiting',
+      updated_at: new Date()
+    });
+
     res.json({ message: 'Order is ready for pickup', order: updatedOrder });
   } catch (error) {
     console.error('Error marking order ready:', error);
     res.status(500).json({ error: 'Failed to update order status' });
+  }
+};
+
+/**
+ * Fetches active orders for a client
+ */
+export const getActiveClientOrders = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        client_id: parseInt(id as string),
+        status: { notIn: ['Delivered', 'Cancelled'] } // Only show active journeys
+      },
+      include: { 
+        items: true, 
+        store: true, 
+        driver: true 
+      },
+      orderBy: { created_at: 'desc' }
+    });
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching active orders:', error);
+    res.status(500).json({ error: 'Failed to fetch active orders' });
   }
 };

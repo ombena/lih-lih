@@ -16,11 +16,30 @@ export default function MenuManager() {
     fetchMenu();
   }, []);
 
-  const fetchMenu = async () => {
+  const syncTags = async (items) => {
+    // Extract unique categories, clean them, and filter out 'Général' if it's the only one
+    const categories = Array.from(new Set(items.map(item => item.category)))
+      .filter(cat => cat && cat !== 'Général')
+      .slice(0, 5); // Limit to top 5 categories to keep the feed clean
+    
+    const tagsString = categories.join(', ');
+    
+    try {
+      await storeAPI.updateStoreProfile(STORE_ID, { tags: tagsString });
+      console.log("Discovery tags synced:", tagsString);
+    } catch (error) {
+      console.error("Failed to sync discovery tags", error);
+    }
+  };
+
+  const fetchMenu = async (shouldSyncTags = false) => {
     setIsLoading(true);
     try {
       const items = await storeAPI.getStoreMenu(STORE_ID);
       setMenuItems(items);
+      if (shouldSyncTags) {
+        await syncTags(items);
+      }
     } catch (error) {
       console.error("Failed to load menu", error);
     } finally {
@@ -55,7 +74,7 @@ export default function MenuManager() {
     } else {
       await storeAPI.createMenuItem(STORE_ID, itemData);
     }
-    await fetchMenu(); // Refresh the menu to see the changes
+    await fetchMenu(true); // Refresh and sync tags to Store profile
   };
 
   // Group items by category

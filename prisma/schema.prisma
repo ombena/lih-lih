@@ -18,12 +18,13 @@ model Client {
   created_at   DateTime @default(now())
   
   orders       Order[]
+  reviews      Review[]
 }
 
 model Store {
   id              Int       @id @default(autoincrement())
   name            String
-  phone_number    String?
+  phone_number    String    @unique
   lat             Decimal?
   lng             Decimal?
   is_open         Boolean   @default(false)
@@ -32,10 +33,24 @@ model Store {
   street          String?
   address1        String?
   address2        String?
+  tags            String?   
+  image_url       String?   // Discovery cover photo
+  rating          Float     @default(5.0)
+  prep_time       String?   @default("15-25 min")
   sub_valid_until DateTime?
+  
+  // Rating Counters (Running Totals)
+  review_count    Int       @default(0)
+  sum_quality     Int       @default(0)
+  sum_accuracy    Int       @default(0)
+  sum_packaging   Int       @default(0)
+  sum_value       Int       @default(0)
+  sum_speed       Int       @default(0)
+  total_orders_count Int      @default(0)
   
   orders          Order[]
   menu_items      Item[]
+  reviews         Review[]
 }
 
 // THE Store's Menu
@@ -48,6 +63,7 @@ model Item {
   category     String   @default("Général")
   stock_count  Int?     
   is_available Boolean  @default(true)
+  total_sold_count Int      @default(0)
   
   store        Store    @relation(fields: [store_id], references: [id])
 }
@@ -85,6 +101,7 @@ model Order {
   driver       Driver?  @relation(fields: [driver_id], references: [id])
   items        OrderItem[]
   disputes     Dispute[]
+  review       Review?
 }
 
 model OrderItem {
@@ -108,4 +125,22 @@ model Dispute {
   resolved_at DateTime?
   
   order       Order     @relation(fields: [order_id], references: [id])
+}
+
+model Review {
+  id               Int      @id @default(autoincrement())
+  order_id         Int      @unique
+  store_id         Int
+  client_id        Int
+  rating_quality   Int      @default(0)
+  rating_accuracy  Int      @default(0)
+  rating_packaging Int      @default(0)
+  rating_value     Int      @default(0)
+  rating_speed     Int      @default(0)
+  comment          String?
+  created_at       DateTime @default(now())
+
+  order            Order    @relation(fields: [order_id], references: [id])
+  client           Client   @relation(fields: [client_id], references: [id])
+  store            Store    @relation(fields: [store_id], references: [id])
 }

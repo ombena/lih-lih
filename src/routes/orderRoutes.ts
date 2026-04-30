@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as orderController from '../controllers/orderController';
+import { getUnreviewedOrders as getUnreviewedOrdersFromReview } from '../controllers/reviewController';
 
 const router = Router();
 
@@ -26,5 +27,7 @@ router.patch('/:id/complete', orderController.completeOrder);
 
 // 7. General info
 router.get('/:id', orderController.getOrderDetails);
+router.get('/client/:id/active', orderController.getActiveClientOrders);
+router.get('/client/:id/unreviewed', getUnreviewedOrdersFromReview);
 
 export default router;
