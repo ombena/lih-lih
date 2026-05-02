@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LihLih Driver - Mission Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Smooth interactions */
+        .active-scale:active { transform: scale(0.96); transition: transform 0.1s; }
+        
+        /* Pulse glow for Hot Zones */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(174, 41, 0, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(174, 41, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(174, 41, 0, 0); }
+        }
+        .hot-zone-glow {
+            animation: pulse-border 2s infinite;
+            border-color: #ae2900;
+        }
+
+        /* Bottom Sheet Animation */
+        .sheet-open { transform: translateY(0); }
+        .sheet-closed { transform: translateY(100%); }
+    </style>
+</head>
+<body class="bg-gray-300 min-h-screen flex justify-center items-center p-4 font-sans antialiased selection:bg-[#ae2900] selection:text-white">
+
+    <!-- Phone Container -->
+    <div class="w-full max-w-[400px] h-[800px] bg-[#121415] rounded-[3rem] shadow-2xl border-[8px] border-[#2c2f30] relative overflow-hidden flex flex-col">
+        
+        <!-- === HEADER: Status & Metrics === -->
+        <header class="pt-10 pb-4 px-6 bg-[#1a1c1d] z-20 shadow-lg relative">
+            <div class="flex justify-between items-center mb-6">
+                <!-- Driver Avatar & Name -->
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-[#2c2f30] flex items-center justify-center border-2 border-[#595c5d] overflow-hidden">
+                        <img src="https://ui-avatars.com/api/?name=Karim+D&background=2c2f30&color=fff" alt="Driver" class="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                        <h1 class="text-white font-black text-lg leading-tight">Karim D.</h1>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="relative flex h-2.5 w-2.5">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                            </span>
+                            <span class="text-green-500 text-[10px] font-black uppercase tracking-widest">En Ligne</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Icon -->
+                <button class="w-10 h-10 rounded-full bg-[#2c2f30] flex items-center justify-center text-[#abadae] active-scale">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Quick Metrics -->
+            <div class="flex gap-3">
+                <div class="flex-1 bg-[#2c2f30] rounded-2xl p-3 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
+                        <i data-lucide="banknote" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="text-[#abadae] text-[10px] font-black uppercase tracking-widest">Gains (Auj)</p>
+                        <p class="text-white font-black text-lg leading-none mt-1">2400 <span class="text-xs text-[#595c5d]">DA</span></p>
+                    </div>
+                </div>
+                <div class="flex-1 bg-[#2c2f30] rounded-2xl p-3 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[#ddddf9]/10 flex items-center justify-center text-[#ddddf9]">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="text-[#abadae] text-[10px] font-black uppercase tracking-widest">Courses</p>
+                        <p class="text-white font-black text-lg leading-none mt-1">8</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- === MAIN FEED: The Bounty Board === -->
+        <div class="flex-1 overflow-y-auto no-scrollbar relative bg-[#121415]">
+            
+            <!-- Sticky Refresh/Timer Indicator -->
+            <div class="sticky top-0 z-10 bg-gradient-to-b from-[#121415] to-transparent pt-4 pb-6 px-6 flex justify-between items-center">
+                <h2 class="text-white font-black text-xl tracking-tighter">Commandes Dispos</h2>
+                <div class="flex items-center gap-2 bg-[#2c2f30] px-3 py-1.5 rounded-full shadow-lg">
+                    <i data-lucide="refresh-cw" id="refresh-icon" class="w-3 h-3 text-[#abadae]"></i>
+                    <span class="text-[10px] font-black text-[#abadae] uppercase tracking-widest" id="countdown-text">Actu. 5s</span>
+                </div>
+            </div>
+
+            <div class="px-6 pb-24 space-y-4" id="bounty-board">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- === BOTTOM NAVIGATION === -->
+        <div class="absolute bottom-0 left-0 right-0 h-20 bg-[#1a1c1d] border-t border-[#2c2f30] flex justify-around items-center px-6 pb-2 rounded-b-[2.5rem] z-20">
+            <div class="flex flex-col items-center gap-1 cursor-pointer">
+                <i data-lucide="radar" class="text-[#ae2900] w-6 h-6"></i>
+                <span class="text-[#ae2900] text-[10px] font-black uppercase tracking-widest">Missions</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 cursor-pointer opacity-40 hover:opacity-100 transition-opacity">
+                <div class="relative">
+                    <i data-lucide="briefcase" class="text-white w-6 h-6"></i>
+                    <!-- Badge Notification -->
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-[#ae2900] rounded-full border-2 border-[#1a1c1d]"></span>
+                </div>
+                <span class="text-white text-[10px] font-black uppercase tracking-widest">Mon Sac</span>
+            </div>
+        </div>
+
+        <!-- === BOTTOM SHEET: Action Modal === -->
+        <div id="bottom-sheet" class="absolute inset-x-0 bottom-0 z-30 bg-[#1a1c1d] rounded-t-[2.5rem] shadow-[0_-20px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 sheet-closed border-t border-[#2c2f30]">
+            <div class="p-6 pb-10">
+                <!-- Drag Handle -->
+                <div class="w-12 h-1.5 bg-[#2c2f30] rounded-full mx-auto mb-6 cursor-pointer" onclick="closeSheet()"></div>
+                
+                <div id="sheet-content">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sheet Overlay -->
+        <div id="sheet-overlay" class="absolute inset-0 bg-black/60 z-20 hidden transition-opacity" onclick="closeSheet()"></div>
+
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // Init Icons
+        lucide.createIcons();
+
+        // Mock Store Data - Added 'orders_list' to show content and dropoff address
+        let stores = [
+            { 
+                id: 1, name: "O'Tacos Laghouat", distance: 1.2, active_orders: 2, is_surge: true,
+                orders_list: [
+                    { id: "8492", items: "2x Tacos Poulet (M), 1x Coca-Cola", address: "Hassi Bahbah Centre, Près de la mosquée" },
+                    { id: "8493", items: "1x Tacos Viande Hachée (L)", address: "Cité 5 Juillet, Bâtiment C" }
+                ]
+            },
+            { 
+                id: 2, name: "Pizzeria El Mordjene", distance: 2.1, active_orders: 1, is_surge: false,
+                orders_list: [
+                    { id: "9102", items: "1x Pizza Carrée, 2x Eau Minérale", address: "Université Amar Telidji, Campus" }
+                ]
+            },
+            { 
+                id: 3, name: "Le Smash Burger", distance: 3.5, active_orders: 1, is_surge: false,
+                orders_list: [
+                    { id: "9105", items: "2x Smash Double, 2x Frites", address: "Oasis Nord, Rue principale" }
+                ]
+            },
+            { id: 4, name: "Chawarma El Amir", distance: 4.2, active_orders: 0, is_surge: false, orders_list: [] }
+        ];
+
+        let countdown = 5;
+
+        // Render the Bounty Board
+        function renderBoard() {
+            const container = document.getElementById('bounty-board');
+            
+            // Filter out empty stores and sort by active orders (descending)
+            const activeStores = stores
+                .filter(s => s.active_orders > 0)
+                .sort((a, b) => b.active_orders - a.active_orders);
+
+            if (activeStores.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                        <i data-lucide="coffee" class="w-16 h-16 text-[#2c2f30] mb-4"></i>
+                        <p class="text-white font-black text-xl mb-1">C'est calme...</p>
+                        <p class="text-[#595c5d] text-sm font-bold">Aucune commande en attente.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = activeStores.map(store => `
+                <div onclick="openSheet(${store.id})" class="bg-[#1a1c1d] rounded-[2rem] p-4 border-2 flex items-center justify-between cursor-pointer active-scale transition-all ${
+                    store.is_surge 
+                        ? 'border-[#ae2900] hot-zone-glow bg-gradient-to-r from-[#ae2900]/10 to-transparent' 
+                        : 'border-[#2c2f30] hover:border-[#595c5d]'
+                }">
+                    <!-- Left: Info -->
+                    <div class="flex-1">
+                        ${store.is_surge ? `
+                            <div class="flex items-center gap-1 text-[#ff7855] mb-1">
+                                <i data-lucide="flame" class="w-3 h-3 fill-current"></i>
+                                <span class="text-[10px] font-black uppercase tracking-widest">Zone Chaude</span>
+                            </div>
+                        ` : ''}
+                        <h3 class="text-white font-black text-lg tracking-tight mb-1">${store.name}</h3>
+                        <div class="flex items-center gap-3 text-[#abadae] text-xs font-bold uppercase tracking-widest">
+                            <span class="flex items-center gap-1 bg-[#2c2f30] px-2 py-1 rounded-md">
+                                <i data-lucide="navigation" class="w-3 h-3 text-[#ff7855]"></i> ${store.distance} km
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Metrics -->
+                    <div class="flex items-center gap-4 border-l border-[#2c2f30] pl-4 ml-4">
+                        <div class="text-center">
+                            <p class="text-[10px] font-black text-[#595c5d] uppercase tracking-widest mb-0.5">Prêtes</p>
+                            <p class="text-3xl font-black leading-none ${store.is_surge ? 'text-[#ff7855]' : 'text-white'}">${store.active_orders}</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-[#2c2f30] flex items-center justify-center text-white">
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Bottom Sheet Logic
+        function openSheet(storeId) {
+            const store = stores.find(s => s.id === storeId);
+            const content = document.getElementById('sheet-content');
+            
+            // Build the orders list HTML
+            const ordersHtml = (store.orders_list || []).map(order => `
+                <div class="bg-[#121415] rounded-2xl p-4 mb-3 border border-[#2c2f30]">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-white font-black text-sm">Commande #${order.id}</span>
+                        <i data-lucide="receipt" class="w-4 h-4 text-[#595c5d]"></i>
+                    </div>
+                    <div class="flex items-start gap-3 mb-2">
+                        <i data-lucide="shopping-bag" class="w-4 h-4 text-[#abadae] mt-0.5"></i>
+                        <p class="text-[#abadae] text-xs font-bold leading-relaxed">${order.items}</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-[#ae2900] mt-0.5"></i>
+                        <p class="text-white text-xs font-bold leading-relaxed">${order.address}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = `
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        ${store.is_surge ? `
+                            <span class="bg-[#ae2900] text-white px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest mb-2 inline-block">Forte Demande</span>
+                        ` : ''}
+                        <h2 class="text-2xl font-black text-white tracking-tighter">${store.name}</h2>
+                        <p class="text-[#abadae] font-bold text-xs uppercase tracking-widest flex items-center gap-1 mt-1">
+                            <i data-lucide="map-pin" class="w-3 h-3"></i> À ${store.distance} km de vous
+                        </p>
+                    </div>
+                    <div class="bg-[#2c2f30] rounded-xl p-3 text-center min-w-[70px]">
+                        <span class="block text-2xl font-black text-white leading-none">${store.active_orders}</span>
+                        <span class="text-[10px] text-[#595c5d] font-black uppercase tracking-widest">Sacs</span>
+                    </div>
+                </div>
+
+                <div class="mb-6 max-h-[35vh] overflow-y-auto no-scrollbar">
+                    <h3 class="text-xs font-black text-[#595c5d] uppercase tracking-widest mb-3 pl-1">Détails pour tarification</h3>
+                    ${ordersHtml || '<p class="text-[#abadae] text-xs italic pl-1">Détails non disponibles</p>'}
+                </div>
+
+                <button onclick="acceptMission()" class="w-full h-14 rounded-xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2 transition-transform active-scale text-white shadow-lg bg-gradient-to-r from-[#ae2900] to-[#ff7855]">
+                    Saisir le Code PIN au Comptoir
+                </button>
+            `;
+            
+            lucide.createIcons();
+            document.getElementById('sheet-overlay').classList.remove('hidden');
+            // Small delay to allow display:block to apply before animating opacity
+            setTimeout(() => {
+                document.getElementById('bottom-sheet').classList.remove('sheet-closed');
+                document.getElementById('bottom-sheet').classList.add('sheet-open');
+            }, 10);
+        }
+
+        function closeSheet() {
+            document.getElementById('bottom-sheet').classList.remove('sheet-open');
+            document.getElementById('bottom-sheet').classList.add('sheet-closed');
+            setTimeout(() => {
+                document.getElementById('sheet-overlay').classList.add('hidden');
+            }, 300);
+        }
+
+        function acceptMission() {
+            alert("Redirection vers le pavé numérique pour :\n1. Saisir le code PIN du caissier\n2. Saisir VOS frais de livraison (DA).");
+            closeSheet();
+        }
+
+        // Simulation Loop
+        function triggerSweep() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('animate-spin', 'text-[#ff7855]');
+            
+            setTimeout(() => {
+                icon.classList.remove('animate-spin', 'text-[#ff7855]');
+            }, 1000);
+
+            // Simulate slight data changes
+            stores = stores.map(store => {
+                if (store.active_orders > 0) {
+                    const change = Math.random() > 0.8 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+                    store.active_orders = Math.max(0, store.active_orders + change);
+                    store.is_surge = store.active_orders >= 5;
+                }
+                return store;
+            });
+
+            renderBoard();
+        }
+
+        setInterval(() => {
+            countdown--;
+            if (countdown <= 0) {
+                triggerSweep();
+                countdown = 5;
+            }
+            document.getElementById('countdown-text').innerText = `Actu. ${countdown}s`;
+        }, 1000);
+
+        // Initial Load
+        renderBoard();
+    </script>
+</body>
+</html>

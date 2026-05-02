@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Oasis - Pulse Spinners</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* CSS Animations for the Web Preview */
+        
+        /* 1. The Core Breathing */
+        @keyframes core-breathe {
+            0%, 100% { transform: scale(0.8); opacity: 0.9; box-shadow: 0 0 10px rgba(174, 41, 0, 0.4); }
+            50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 25px rgba(255, 120, 85, 0.8); }
+        }
+
+        /* 2. The Expanding Ripple */
+        @keyframes ripple-expand {
+            0% { transform: scale(0.5); opacity: 0.8; border-width: 4px; }
+            100% { transform: scale(2.5); opacity: 0; border-width: 0px; }
+        }
+
+        /* 3. The Kinetic Ring Spin */
+        @keyframes kinetic-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .animate-core { animation: core-breathe 1.5s ease-in-out infinite; }
+        .animate-ripple-1 { animation: ripple-expand 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite; }
+        .animate-ripple-2 { animation: ripple-expand 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite; animation-delay: 0.5s; }
+        .animate-ring { animation: kinetic-spin 1.2s cubic-bezier(0.6, 0.1, 0.4, 0.9) infinite; }
+        
+        /* Custom Scrollbar for code block */
+        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1c1d; }
+        ::-webkit-scrollbar-thumb { background: #595c5d; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans antialiased text-[#2c2f30] flex flex-col items-center">
+
+    <header class="w-full bg-white p-6 shadow-sm mb-8 text-center border-b-[4px] border-[#ae2900]">
+        <h1 class="text-3xl font-black tracking-tighter text-[#2c2f30] uppercase">Kinetic Oasis <span class="text-[#ae2900]">Loaders</span></h1>
+        <p class="text-[#595c5d] font-bold tracking-widest text-sm mt-2">Démonstration UI & Code React Native</p>
+    </header>
+
+    <div class="w-full max-w-6xl px-4 grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        
+        <!-- DARK THEME PREVIEW (Driver App) -->
+        <div class="bg-[#121415] rounded-[2.5rem] p-12 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden border border-[#2c2f30]">
+            <h2 class="text-white font-black text-xl mb-12 uppercase tracking-widest absolute top-8">Thème Sombre (Driver)</h2>
+            
+            <div class="flex gap-20 items-center mt-8">
+                <!-- Variant 1: Sonar Pulse -->
+                <div class="flex flex-col items-center gap-6">
+                    <div class="relative w-24 h-24 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-[#ff7855] animate-ripple-1"></div>
+                        <div class="absolute inset-0 rounded-full border-[#ff7855] animate-ripple-2"></div>
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#ae2900] to-[#ff7855] animate-core z-10"></div>
+                    </div>
+                    <span class="text-[#abadae] font-bold text-xs uppercase tracking-widest">Sonar Pulse</span>
+                </div>
+
+                <!-- Variant 2: Kinetic Ring -->
+                <div class="flex flex-col items-center gap-6">
+                    <div class="relative w-16 h-16 flex items-center justify-center animate-ring">
+                        <div class="absolute inset-0 rounded-full border-4 border-[#2c2f30]"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#ff7855] border-r-[#ae2900]"></div>
+                    </div>
+                    <span class="text-[#abadae] font-bold text-xs uppercase tracking-widest">Kinetic Ring</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIGHT THEME PREVIEW (Client/Store App) -->
+        <div class="bg-[#ffffff] rounded-[2.5rem] p-12 shadow-xl flex flex-col items-center justify-center relative overflow-hidden border border-[#eff1f2]">
+            <h2 class="text-[#2c2f30] font-black text-xl mb-12 uppercase tracking-widest absolute top-8">Thème Clair (Client)</h2>
+            
+            <div class="flex gap-20 items-center mt-8">
+                <!-- Variant 1: Sonar Pulse -->
+                <div class="flex flex-col items-center gap-6">
+                    <div class="relative w-24 h-24 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-[#ae2900] animate-ripple-1 opacity-50"></div>
+                        <div class="absolute inset-0 rounded-full border-[#ae2900] animate-ripple-2 opacity-50"></div>
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#ae2900] to-[#ff7855] animate-core shadow-lg shadow-orange-500/30 z-10"></div>
+                    </div>
+                    <span class="text-[#595c5d] font-bold text-xs uppercase tracking-widest">Sonar Pulse</span>
+                </div>
+
+                <!-- Variant 2: Kinetic Ring -->
+                <div class="flex flex-col items-center gap-6">
+                    <div class="relative w-16 h-16 flex items-center justify-center animate-ring">
+                        <div class="absolute inset-0 rounded-full border-4 border-[#eff1f2]"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#ae2900] border-r-[#ff7855]"></div>
+                    </div>
+                    <span class="text-[#595c5d] font-bold text-xs uppercase tracking-widest">Kinetic Ring</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CODE SECTION FOR DEVELOPER -->
+    <div class="w-full max-w-6xl px-4 pb-16">
+        <div class="bg-[#1a1c1d] rounded-[2.5rem] overflow-hidden shadow-2xl">
+            <div class="bg-[#2c2f30] px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="code" class="text-white w-5 h-5"></i>
+                    <h3 class="text-white font-black tracking-widest uppercase text-sm">Code React Native pour votre développeur</h3>
+                </div>
+                <span class="bg-[#121415] text-[#abadae] px-3 py-1 rounded-lg text-xs font-bold font-mono">KineticLoader.tsx</span>
+            </div>
+            <div class="p-6 overflow-x-auto">
+<pre class="text-sm font-mono text-[#eff1f2] leading-relaxed">
+<span class="text-pink-400">import</span> React, { useEffect } <span class="text-pink-400">from</span> <span class="text-green-300">'react'</span>;
+<span class="text-pink-400">import</span> { View, StyleSheet } <span class="text-pink-400">from</span> <span class="text-green-300">'react-native'</span>;
+<span class="text-pink-400">import</span> Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  withSequence,
+  withDelay,
+  Easing 
+} <span class="text-pink-400">from</span> <span class="text-green-300">'react-native-reanimated'</span>;
+<span class="text-pink-400">import</span> { Colors } <span class="text-pink-400">from</span> <span class="text-green-300">'./UIPrimitives'</span>;
+
+<span class="text-gray-500">// 1. LE SONAR PULSE (Idéal pour le radar et la recherche GPS)</span>
+<span class="text-pink-400">export const</span> <span class="text-blue-300">SonarPulseLoader</span> = ({ size = <span class="text-orange-300">60</span>, color = Colors.primary }) <span class="text-pink-400">=&gt;</span> {
+  <span class="text-pink-400">const</span> ripple1Scale = <span class="text-blue-200">useSharedValue</span>(<span class="text-orange-300">0.5</span>);
+  <span class="text-pink-400">const</span> ripple1Opacity = <span class="text-blue-200">useSharedValue</span>(<span class="text-orange-300">1</span>);
+  <span class="text-pink-400">const</span> ripple2Scale = <span class="text-blue-200">useSharedValue</span>(<span class="text-orange-300">0.5</span>);
+  <span class="text-pink-400">const</span> ripple2Opacity = <span class="text-blue-200">useSharedValue</span>(<span class="text-orange-300">1</span>);
+  <span class="text-pink-400">const</span> coreScale = <span class="text-blue-200">useSharedValue</span>(<span class="text-orange-300">0.8</span>);
+
+  <span class="text-blue-200">useEffect</span>(() <span class="text-pink-400">=&gt;</span> {
+    <span class="text-gray-500">// Animation du cœur (battement)</span>
+    coreScale.value = <span class="text-blue-200">withRepeat</span>(
+      <span class="text-blue-200">withSequence</span>(
+        <span class="text-blue-200">withTiming</span>(<span class="text-orange-300">1.1</span>, { duration: <span class="text-orange-300">750</span>, easing: Easing.inOut(Easing.ease) }),
+        <span class="text-blue-200">withTiming</span>(<span class="text-orange-300">0.8</span>, { duration: <span class="text-orange-300">750</span>, easing: Easing.inOut(Easing.ease) })
+      ), <span class="text-orange-300">-1</span>, <span class="text-orange-300">true</span>
+    );
+
+    <span class="text-gray-500">// Onde 1</span>
+    ripple1Scale.value = <span class="text-blue-200">withRepeat</span>(<span class="text-blue-200">withTiming</span>(<span class="text-orange-300">2.5</span>, { duration: <span class="text-orange-300">2000</span>, easing: Easing.out(Easing.quad) }), <span class="text-orange-300">-1</span>, <span class="text-orange-300">false</span>);
+    ripple1Opacity.value = <span class="text-blue-200">withRepeat</span>(<span class="text-blue-200">withTiming</span>(<span class="text-orange-300">0</span>, { duration: <span class="text-orange-300">2000</span>, easing: Easing.out(Easing.quad) }), <span class="text-orange-300">-1</span>, <span class="text-orange-300">false</span>);
+    
+    <span class="text-gray-500">// Onde 2 (décalée de 1000ms)</span>
+    ripple2Scale.value = <span class="text-blue-200">withDelay</span>(<span class="text-orange-300">1000</span>, <span class="text-blue-200">withRepeat</span>(<span class="text-blue-200">withTiming</span>(<span class="text-orange-300">2.5</span>, { duration: <span class="text-orange-300">2000</span>, easing: Easing.out(Easing.quad) }), <span class="text-orange-300">-1</span>, <span class="text-orange-300">false</span>));
+    ripple2Opacity.value = <span class="text-blue-200">withDelay</span>(<span class="text-orange-300">1000</span>, <span class="text-blue-200">withRepeat</span>(<span class="text-blue-200">withTiming</span>(<span class="text-orange-300">0</span>, { duration: <span class="text-orange-300">2000</span>, easing: Easing.out(Easing.quad) }), <span class="text-orange-300">-1</span>, <span class="text-orange-300">false</span>));
+  }, []);
+
+  <span class="text-pink-400">const</span> animCore = <span class="text-blue-200">useAnimatedStyle</span>(() <span class="text-pink-400">=&gt;</span> ({ transform: [{ scale: coreScale.value }] }));
+  <span class="text-pink-400">const</span> animRipple1 = <span class="text-blue-200">useAnimatedStyle</span>(() <span class="text-pink-400">=&gt;</span> ({ transform: [{ scale: ripple1Scale.value }], opacity: ripple1Opacity.value }));
+  <span class="text-pink-400">const</span> animRipple2 = <span class="text-blue-200">useAnimatedStyle</span>(() <span class="text-pink-400">=&gt;</span> ({ transform: [{ scale: ripple2Scale.value }], opacity: ripple2Opacity.value }));
+
+  <span class="text-pink-400">return</span> (
+    &lt;<span class="text-blue-300">View</span> style={[styles.container, { width: size, height: size }]}&gt;
+      &lt;<span class="text-blue-300">Animated.View</span> style={[styles.ripple, { borderColor: color }, animRipple1]} /&gt;
+      &lt;<span class="text-blue-300">Animated.View</span> style={[styles.ripple, { borderColor: color }, animRipple2]} /&gt;
+      &lt;<span class="text-blue-300">Animated.View</span> style={[styles.core, { backgroundColor: color }, animCore]} /&gt;
+    &lt;/<span class="text-blue-300">View</span>&gt;
+  );
+};
+
+<span class="text-gray-500">// 2. LE KINETIC RING (Idéal pour valider un paiement / un bouton)</span>
+<span class="text-pink-400">export const</span> <span class="text-blue-300">KineticRingLoader</span> = ({ size = <span class="text-orange-300">40</span>, color = Colors.primary }) <span class="text-pink-400">=&gt;</span> {
+  <span class="text-pink-400">const</span> rotation = <span class="text-blue-200">useSharedValue</span>(<span class="text-orange-300">0</span>);
+
+  <span class="text-blue-200">useEffect</span>(() <span class="text-pink-400">=&gt;</span> {
+    rotation.value = <span class="text-blue-200">withRepeat</span>(
+      <span class="text-blue-200">withTiming</span>(<span class="text-orange-300">360</span>, { duration: <span class="text-orange-300">1000</span>, easing: Easing.bezier(<span class="text-orange-300">0.6</span>, <span class="text-orange-300">0.1</span>, <span class="text-orange-300">0.4</span>, <span class="text-orange-300">0.9</span>) }), 
+      <span class="text-orange-300">-1</span>, <span class="text-orange-300">false</span>
+    );
+  }, []);
+
+  <span class="text-pink-400">const</span> animStyle = <span class="text-blue-200">useAnimatedStyle</span>(() <span class="text-pink-400">=&gt;</span> ({ transform: [{ rotate: `${rotation.value}deg` }] }));
+
+  <span class="text-pink-400">return</span> (
+    &lt;<span class="text-blue-300">View</span> style={{ width: size, height: size }}&gt;
+      &lt;<span class="text-blue-300">View</span> style={[StyleSheet.absoluteFill, styles.ringBg]} /&gt;
+      &lt;<span class="text-blue-300">Animated.View</span> style={[StyleSheet.absoluteFill, styles.ringActive, { borderTopColor: color, borderRightColor: Colors.primaryContainer }, animStyle]} /&gt;
+    &lt;/<span class="text-blue-300">View</span>&gt;
+  );
+};
+
+<span class="text-pink-400">const</span> styles = StyleSheet.<span class="text-blue-200">create</span>({
+  container: { justifyContent: <span class="text-green-300">'center'</span>, alignItems: <span class="text-green-300">'center'</span> },
+  core: { width: <span class="text-orange-300">'40%'</span>, height: <span class="text-orange-300">'40%'</span>, borderRadius: <span class="text-orange-300">999</span>, elevation: <span class="text-orange-300">8</span>, shadowColor: Colors.primary },
+  ripple: { ...StyleSheet.absoluteFillObject, borderRadius: <span class="text-orange-300">999</span>, borderWidth: <span class="text-orange-300">3</span> },
+  ringBg: { borderRadius: <span class="text-orange-300">999</span>, borderWidth: <span class="text-orange-300">4</span>, borderColor: Colors.surfaceContainerLow },
+  ringActive: { borderRadius: <span class="text-orange-300">999</span>, borderWidth: <span class="text-orange-300">4</span>, borderBottomColor: <span class="text-green-300">'transparent'</span>, borderLeftColor: <span class="text-green-300">'transparent'</span> }
+});
+</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

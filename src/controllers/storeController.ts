@@ -3,6 +3,21 @@ import { Prisma } from '@prisma/client';
 import prisma from '../prismaClient';
 
 /**
+ * Increments the version for a specific key in the SystemRegistry.
+ */
+export const incrementSystemVersion = async (key: string) => {
+  try {
+    await prisma.systemRegistry.upsert({
+      where: { key },
+      update: { version: { increment: 1 } },
+      create: { key, version: 1 }
+    });
+  } catch (error) {
+    console.error(`Failed to increment system version for ${key}:`, error);
+  }
+};
+
+/**
  * Fetches all stores from the database including their menu items.
  */
 export const getAllStores = async (req: Request, res: Response) => {
@@ -38,7 +53,6 @@ export const getDiscoveryFeed = async (req: Request, res: Response) => {
           name: true,
           image_url: true,
           rating: true,
-          prep_time: true,
           tags: true,
           review_count: true,
           total_orders_count: true,
@@ -254,7 +268,8 @@ export const updateMenuItem = async (req: Request, res: Response) => {
  */
 export const updateStoreProfile = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, phone_number, wilaya, baladia, street, lat, lng, tags, image_url, rating, prep_time } = req.body;
+  console.log(`DEBUG: updateStoreProfile called for Store ID: ${id}`);
+  const { name, phone_number, wilaya, baladia, street, lat, lng, tags, image_url, rating } = req.body;
 
   try {
     const updatedStore = await prisma.store.update({
@@ -270,10 +285,15 @@ export const updateStoreProfile = async (req: Request, res: Response) => {
         tags: tags !== undefined ? tags : undefined,
         image_url: image_url !== undefined ? image_url : undefined,
         rating: rating !== undefined ? Number(rating) : undefined,
-        prep_time: prep_time !== undefined ? prep_time : undefined,
+        updated_at: new Date(), // Explicitly force update for Checksum Sync
       }
     });
 
+    console.log(`HEURE ENREGISTRÉE : ${updatedStore.updated_at}`);
+    
+    // Increment global store directory version
+    await incrementSystemVersion('stores_directory');
+    
     res.json(updatedStore);
   } catch (error) {
     console.error('Error updating store profile:', error);
@@ -303,12 +323,46 @@ export const toggleStoreStatus = async (req: Request, res: Response) => {
 
     const updatedStore = await prisma.store.update({
       where: { id: parseInt(id as string) },
-      data: { is_open }
+      data: { 
+        is_open,
+        updated_at: new Date() 
+      }
     });
+
+    // Increment global store directory version
+    await incrementSystemVersion('stores_directory');
 
     res.json(updatedStore);
   } catch (error) {
     console.error('Error toggling store status:', error);
     res.status(500).json({ error: 'Failed to toggle store status' });
+  }
+};
+
+/**
+ * Fetches the static store directory for local caching by the driver app.
+ * Returns only essential fields (id, name, lat, lng, is_open).
+ */
+export const getStoreDirectory = async (req: Request, res: Response) => {
+  const { last_sync } = req.query;
+
+  try {
+    // Note: Since Prisma schema does not currently have updated_at on Store,
+    // we return all stores. In the future, we can add Delta Sync logic here 
+    // by comparing last_sync with an updated_at field.
+    const stores = await prisma.store.findMany({
+      select: {
+        id: true,
+        name: true,
+        lat: true,
+        lng: true,
+        is_open: true,
+      }
+    });
+
+    res.json(stores);
+  } catch (error) {
+    console.error('Error in getStoreDirectory:', error);
+    res.status(500).json({ error: 'Failed to fetch store directory' });
   }
 };

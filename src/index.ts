@@ -69,4 +69,4 @@ app.get('/health', (req, res) => {
 // Start the server using httpServer.listen instead of app.listen
 httpServer.listen(port, () => {
   console.log(`🚀 LihLih Server running on port ${port}`);
-});
+});

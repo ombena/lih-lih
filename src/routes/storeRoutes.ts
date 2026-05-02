@@ -4,6 +4,7 @@ import * as storeController from '../controllers/storeController';
 const router = Router();
 
 // PUT SPECIFIC ROUTES FIRST!
+router.get('/directory', storeController.getStoreDirectory);
 router.get('/feed', storeController.getDiscoveryFeed);
 router.get('/:id/active-orders', storeController.getActiveOrders);
 

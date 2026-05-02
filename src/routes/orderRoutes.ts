@@ -4,6 +4,9 @@ import { getUnreviewedOrders as getUnreviewedOrdersFromReview } from '../control
 
 const router = Router();
 
+// NEW: 5-Second Pulse for Driver Feed (High Priority Route)
+router.get('/pulse', orderController.getPulse);
+
 // 1. Client creates order
 router.post('/', orderController.createOrder);
 
@@ -24,6 +27,7 @@ router.patch('/:id/arriving', orderController.arrivingNotification);
 
 // 6. Complete Delivery (Verify PIN)
 router.patch('/:id/complete', orderController.completeOrder);
+
 
 // 7. General info
 router.get('/:id', orderController.getOrderDetails);

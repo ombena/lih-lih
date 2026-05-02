@@ -9,14 +9,18 @@ datasource db {
   provider = "postgresql"
 }
 
+// LihLih Platform Data Model
+// Phase 1: Core Logistics & Discovery
+
 model Client {
   id           Int      @id @default(autoincrement())
   name         String
   phone_number String   @unique
+  wilaya       String?
+  baladia      String?
   default_lat  Decimal?
   default_lng  Decimal?
   created_at   DateTime @default(now())
-  
   orders       Order[]
   reviews      Review[]
 }
@@ -25,18 +29,17 @@ model Store {
   id              Int       @id @default(autoincrement())
   name            String
   phone_number    String    @unique
-  lat             Decimal?
-  lng             Decimal?
   is_open         Boolean   @default(false)
   wilaya          String?
   baladia         String?
   street          String?
   address1        String?
   address2        String?
+  lat             Decimal?
+  lng             Decimal?
   tags            String?   
   image_url       String?   // Discovery cover photo
   rating          Float     @default(5.0)
-  prep_time       String?   @default("15-25 min")
   sub_valid_until DateTime?
   
   // Rating Counters (Running Totals)
@@ -51,6 +54,13 @@ model Store {
   orders          Order[]
   menu_items      Item[]
   reviews         Review[]
+  updated_at      DateTime  @default(now()) @updatedAt
+}
+
+// Central registry for tracking versions of global entities
+model SystemRegistry {
+  key     String @id
+  version Int    @default(1)
 }
 
 // THE Store's Menu

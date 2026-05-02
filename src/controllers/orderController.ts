@@ -254,7 +254,7 @@ export const completeOrder = async (req: Request, res: Response) => {
     const updatedOrder = await prisma.order.update({
       where: { id: parseInt(id as string) },
       data: { status: 'Delivered' },
-      include: { order_items: true }
+      include: { items: true }
     });
 
     // 3. Social Proof Aggregation (Atomic Increments)
@@ -264,12 +264,17 @@ export const completeOrder = async (req: Request, res: Response) => {
       data: { total_orders_count: { increment: 1 } }
     });
 
-    // Update individual Item sales counts
-    for (const item of updatedOrder.order_items) {
-      await prisma.item.update({
-        where: { id: item.item_id },
-        data: { total_sold_count: { increment: item.quantity } }
+    // Update individual Item sales counts (finding by name since OrderItem is decoupled)
+    for (const item of updatedOrder.items) {
+      const dbItem = await prisma.item.findFirst({
+        where: { store_id: updatedOrder.store_id, name: item.food_name }
       });
+      if (dbItem) {
+        await prisma.item.update({
+          where: { id: dbItem.id },
+          data: { total_sold_count: { increment: item.quantity } }
+        });
+      }
     }
 
     // Notify Client
@@ -321,6 +326,7 @@ export const arrivingNotification = async (req: Request, res: Response) => {
  */
 export const getOrderDetails = async (req: Request, res: Response) => {
   const { id } = req.params;
+  console.log('HIT: getOrderDetails, id:', id);
   try {
     const order = await prisma.order.findUnique({
       where: { id: parseInt(id as string) },
@@ -387,5 +393,45 @@ export const getActiveClientOrders = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching active orders:', error);
     res.status(500).json({ error: 'Failed to fetch active orders' });
+  }
+};
+
+/**
+ * 5-Second Pulse
+ * Ultra-lightweight query returning only the active waiting order counts per store.
+ */
+export const getPulse = async (req: Request, res: Response) => {
+  console.log('HIT: getPulse');
+  try {
+    const pulseData = await prisma.order.groupBy({
+      by: ['store_id'],
+      where: {
+        status: 'Waiting', // Ready to be picked up
+        driver_id: null    // Not yet claimed
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Fetch latest store directory version from SystemRegistry
+    const registry = await prisma.systemRegistry.findUnique({
+      where: { key: 'stores_directory' }
+    });
+    const directory_version = registry?.version || 0;
+
+    const formattedPulse = pulseData.map(group => ({
+      store_id: group.store_id,
+      active_orders: group._count.id,
+      is_surge: group._count.id >= 3
+    }));
+
+    res.json({
+      pulse: formattedPulse,
+      directory_version
+    });
+  } catch (error) {
+    console.error('Error in getPulse:', error);
+    res.status(500).json({ error: 'Failed to fetch pulse' });
   }
 };
