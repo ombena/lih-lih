@@ -16,6 +16,7 @@ const Colors = {
   background: '#f5f6f7',
   error: '#b31b25',
   secondary: '#FFB800', // Gold/Yellow for badges & highlights
+  success: '#228B22',
 };
 
 export const SurfaceCard = ({ children, style }: { children: React.ReactNode, style?: ViewStyle }) => (
@@ -167,7 +168,8 @@ export const StatusBadge = ({ status }: { status: string }) => {
       case 'Accepted_by_Driver': return '#2c2f30';
       case 'Picked_Up': return '#ae2900';
       case 'Arriving': return '#ae2900';
-      case 'Delivered': return '#228B22';
+      case 'Delivered': return Colors.success;
+      case 'Archived': return '#595c5d';
       default: return '#595c5d';
     }
   };
@@ -181,6 +183,7 @@ export const StatusBadge = ({ status }: { status: string }) => {
       case 'Picked_Up': return 'En cours';
       case 'Arriving': return 'Arrive bientôt';
       case 'Delivered': return 'Livré';
+      case 'Archived': return 'Archivé';
       default: return status;
     }
   };
@@ -213,15 +216,18 @@ export const OrderJourneyTimeline = ({ status }: { status: string }) => {
         {steps.map((step, index) => {
           const isCompleted = index < activeIndex;
           const isActive = index === activeIndex;
+          const isDelivered = status === 'Delivered';
           const Icon = step.icon;
-          const color = (isCompleted || isActive) ? Colors.primary : Colors.surfaceContainerHigh;
+          const color = (isCompleted || isActive) 
+            ? (isDelivered ? Colors.success : Colors.primary) 
+            : Colors.surfaceContainerHigh;
           
           return (
             <React.Fragment key={step.key}>
               <View style={styles.timelineStep}>
                 <View style={[
                   styles.iconWrapper,
-                  (isCompleted || isActive) && styles.iconWrapperActive
+                  (isCompleted || isActive) && (status === 'Delivered' ? styles.iconWrapperSuccess : styles.iconWrapperActive)
                 ]}>
                   <Icon size={20} color={color} strokeWidth={isActive ? 2.5 : 2} />
                 </View>
@@ -229,7 +235,7 @@ export const OrderJourneyTimeline = ({ status }: { status: string }) => {
               {index < steps.length - 1 && (
                 <View style={[
                   styles.timelineLine,
-                  index < activeIndex && styles.timelineLineCompleted
+                  index < activeIndex && (status === 'Delivered' ? styles.timelineLineSuccess : styles.timelineLineCompleted)
                 ]} />
               )}
             </React.Fragment>
@@ -413,6 +419,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
+  iconWrapperSuccess: {
+    borderColor: Colors.success,
+    backgroundColor: Colors.surface,
+    elevation: 4,
+    shadowColor: Colors.success,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
   timelineLine: {
     height: 3,
     flex: 1,
@@ -422,6 +437,9 @@ const styles = StyleSheet.create({
   },
   timelineLineCompleted: {
     backgroundColor: Colors.primary,
+  },
+  timelineLineSuccess: {
+    backgroundColor: Colors.success,
   }
 });
 

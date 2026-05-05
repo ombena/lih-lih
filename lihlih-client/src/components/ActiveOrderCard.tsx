@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors, SurfaceCard, StatusBadge, OrderJourneyTimeline } from './UIPrimitives';
-import { Store, Hash, CreditCard, ShieldCheck } from 'lucide-react-native';
+import { Store, Hash, CreditCard, ShieldCheck, CheckCircle2, Archive, X } from 'lucide-react-native';
 
-export default function ActiveOrderCard({ order }: { order: any }) {
-  const isPickedUp = order.status === 'Picked_Up' || order.status === 'Arriving';
+export default function ActiveOrderCard({ order, onArchive }: { order: any, onArchive?: (id: number) => void }) {
+  const isPickedUp = order.status === 'Picked_Up' || order.status === 'Arriving' || order.status === 'Delivered';
+  const isDelivered = order.status === 'Delivered';
   
   return (
     <SurfaceCard style={styles.card}>
@@ -26,16 +27,41 @@ export default function ActiveOrderCard({ order }: { order: any }) {
       <View style={styles.divider} />
 
       {/* The OTP Security Block - HIGHLIGHTED */}
-      <View style={styles.otpBlock}>
+      <View style={[styles.otpBlock, isDelivered && styles.otpBlockSuccess]}>
         <View style={styles.otpHeader}>
-          <ShieldCheck color={Colors.onPrimary} size={18} />
-          <Text style={styles.otpTitle}>Code de Livraison (PIN)</Text>
+          {isDelivered ? (
+            <CheckCircle2 color={Colors.onPrimary} size={18} />
+          ) : (
+            <ShieldCheck color={Colors.onPrimary} size={18} />
+          )}
+          <Text style={styles.otpTitle}>
+            {isDelivered ? 'Commande Livrée avec Succès' : 'Code de Livraison (PIN)'}
+          </Text>
         </View>
-        <Text style={styles.otpCode}>{order.delivery_pin}</Text>
+        <Text style={styles.otpCode}>{isDelivered ? 'VALIDÉ' : order.delivery_pin}</Text>
         <Text style={styles.otpDisclaimer}>
-          Donnez ce code au livreur uniquement lorsque vous recevez votre commande.
+          {isDelivered 
+            ? 'Merci d\'avoir choisi LihLih ! Bon appétit.' 
+            : 'Donnez ce code au livreur uniquement lorsque vous recevez votre commande.'}
         </Text>
       </View>
+
+      {order.instructions && (
+        <View style={styles.instructionsContainer}>
+          <Text style={styles.instructionsTitle}>Instructions spéciales :</Text>
+          <Text style={styles.instructionsText}>"{order.instructions}"</Text>
+        </View>
+      )}
+
+      {isDelivered && (
+        <TouchableOpacity 
+          style={styles.archiveBtn} 
+          onPress={() => onArchive?.(order.id)}
+        >
+          <Archive size={16} color={Colors.onSurfaceVariant} />
+          <Text style={styles.archiveBtnText}>Archiver cette commande</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Price Summary */}
       <View style={styles.footer}>
@@ -172,5 +198,46 @@ const styles = StyleSheet.create({
     marginTop: 15,
     flexDirection: 'row',
     justifyContent: 'flex-end',
+  },
+  otpBlockSuccess: {
+    backgroundColor: Colors.success,
+  },
+  archiveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    borderRadius: 12,
+    marginBottom: 15,
+    gap: 8,
+  },
+  archiveBtnText: {
+    color: Colors.onSurfaceVariant,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  instructionsContainer: {
+    backgroundColor: Colors.surfaceContainerLow,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.primary,
+  },
+  instructionsTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: Colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  instructionsText: {
+    fontSize: 14,
+    color: Colors.onSurface,
+    fontWeight: '600',
+    fontStyle: 'italic',
   }
 });

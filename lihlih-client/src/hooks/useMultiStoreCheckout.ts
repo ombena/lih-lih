@@ -12,6 +12,7 @@ export const useMultiStoreCheckout = () => {
   
   const [clientData, setClientData] = useState<ClientData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [instructions, setInstructions] = useState<Record<number, string>>({});
 
   useEffect(() => {
     loadClientData();
@@ -20,6 +21,10 @@ export const useMultiStoreCheckout = () => {
   const loadClientData = async () => {
     const data = await getClientData();
     setClientData(data);
+  };
+
+  const updateInstructions = (storeId: number, text: string) => {
+    setInstructions(prev => ({ ...prev, [storeId]: text }));
   };
 
   const defaultPreset = clientData?.presets.find(p => p.is_default);
@@ -51,11 +56,13 @@ export const useMultiStoreCheckout = () => {
 
       // Prepare and send orders for each store group
       const promises = Object.entries(groupedOrders).map(([storeId, storeData]) => {
+        const sId = parseInt(storeId);
         const orderPayload = {
           client_id: CLIENT_ID,
-          store_id: parseInt(storeId),
+          store_id: sId,
           dropoff_lat: defaultPreset.lat,
           dropoff_lng: defaultPreset.lng,
+          instructions: instructions[sId] || null, // Include instructions here
           items: storeData.items.map(item => ({
             item_id: item.id,
             quantity: item.quantity
@@ -85,6 +92,8 @@ export const useMultiStoreCheckout = () => {
   return {
     submitAllOrders,
     groupedOrders,
+    instructions,
+    updateInstructions,
     isReady: cartItems.length > 0 && !!defaultPreset && !isSubmitting,
     isSubmitting,
     defaultPreset

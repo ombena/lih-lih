@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { KineticSwitch } from '../components/InteractiveControls';
 import { SurfaceCard, KineticButton, StatusBadge, OasisToast } from '../components/UIPrimitives';
 import { TrendingUp, Calendar, AlertCircle, ShieldCheck } from 'lucide-react';
@@ -6,6 +7,7 @@ import { OasisInput } from '../components/ItemEditorModal';
 import { storeAPI } from '../services/api';
 
 export default function StoreSettings() {
+  const { storeId } = useParams();
   const [store, setStore] = useState(null);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   
@@ -22,7 +24,7 @@ export default function StoreSettings() {
 
   const [toast, setToast] = useState({ isVisible: false, message: '', type: 'error' });
 
-  const STORE_ID = 1; // Hardcoded for MVP
+  const STORE_ID = storeId; // Dynamic from URL
 
   useEffect(() => {
     const fetchStore = async () => {

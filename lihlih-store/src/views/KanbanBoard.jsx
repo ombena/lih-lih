@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { OrderCard } from '../components/OrderCard';
 import { SegmentedControl } from '../components/InteractiveControls';
 import { storeAPI } from '../services/api'; 
@@ -6,6 +7,7 @@ import { BellRing } from 'lucide-react';
 
 
 export default function KanbanBoard() {
+  const { storeId } = useParams();
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('En préparation');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -15,7 +17,7 @@ export default function KanbanBoard() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const data = await storeAPI.getActiveOrders(1); // Hardcoded store_id = 1 for MVP
+        const data = await storeAPI.getActiveOrders(storeId); // Dynamic storeId from URL
         
         const formattedOrders = data.map(order => ({
           id: order.id.toString(),
@@ -25,7 +27,7 @@ export default function KanbanBoard() {
             quantity: item.quantity,
             name: item.food_name || item.name
           })),
-          notes: '',
+          notes: order.instructions || '',
           driver: order.driver ? { name: order.driver.name } : null
         }));
         

@@ -1,14 +1,47 @@
-import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useParams, Outlet } from 'react-router-dom';
 import KanbanBoard from './views/KanbanBoard';
 import MenuManager from './views/MenuManager';
-import StoreSettings from './views/StoreSettings'; // Nouvelle vue importée
-import KitchenAlarm from './components/KitchenAlarm'; // 1. Import the alarm
+import StoreSettings from './views/StoreSettings';
+import KitchenAlarm from './components/KitchenAlarm';
+import { storeAPI } from './services/api';
+
+const StoreLayout = () => {
+  const { storeId } = useParams();
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+
+  // Auto-Open Logic: When a store manager opens their dashboard, 
+  // automatically mark the store as "Open" in the database.
+  useEffect(() => {
+    const openStore = async () => {
+      try {
+        await storeAPI.toggleStoreStatus(storeId, true);
+        console.log(`Store ${storeId} automatically opened.`);
+      } catch (err) {
+        console.warn(`Could not auto-open store ${storeId}:`, err.response?.data?.message || err.message);
+      }
+    };
+    if (storeId) openStore();
+  }, [storeId]);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-[#f5f6f7]">
+      <StoreNavigation />
+      <KitchenAlarm storeId={parseInt(storeId)} /> 
+      <div className="flex-1">
+        <Outlet context={{ audioUnlocked, setAudioUnlocked }} />
+      </div>
+    </div>
+  );
+};
 
 /**
  * StoreNavigation: Composant de navigation principale du tableau de bord.
  * Gère les liens vers les différentes sections de l'application.
  */
 const StoreNavigation = () => {
+  const { storeId } = useParams();
+  
   const navClass = ({ isActive }) => 
     `px-6 py-3 rounded-xl font-black tracking-widest uppercase text-sm transition-all whitespace-nowrap ${
       isActive 
@@ -23,9 +56,9 @@ const StoreNavigation = () => {
           LihLih <span className="text-[#ae2900]">Store</span>
         </span>
       </div>
-      <NavLink to="/kanban" className={navClass}>Cuisine</NavLink>
-      <NavLink to="/menu" className={navClass}>Stock</NavLink>
-      <NavLink to="/settings" className={navClass}>Paramètres</NavLink>
+      <NavLink to={`/${storeId}/kanban`} className={navClass}>Cuisine</NavLink>
+      <NavLink to={`/${storeId}/menu`} className={navClass}>Stock</NavLink>
+      <NavLink to={`/${storeId}/settings`} className={navClass}>Paramètres</NavLink>
     </nav>
   );
 };
@@ -33,21 +66,16 @@ const StoreNavigation = () => {
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen bg-[#f5f6f7]">
-        {/* Barre de navigation supérieure */}
-        <StoreNavigation />
-        <KitchenAlarm storeId={1} /> 
-        {/* Contenu des pages */}
-        <div className="flex-1">
-          <Routes>
-            <Route path="/kanban" element={<KanbanBoard />} />
-            <Route path="/menu" element={<MenuManager />} />
-            <Route path="/settings" element={<StoreSettings />} />
-            {/* Redirection par défaut vers le tableau de cuisine */}
-            <Route path="*" element={<Navigate to="/kanban" replace />} />
-          </Routes>
-        </div>
-      </div>
+      <Routes>
+        <Route path="/" element={<Navigate to="/1/kanban" replace />} />
+        
+        <Route path="/:storeId" element={<StoreLayout />}>
+          <Route index element={<Navigate to="kanban" replace />} />
+          <Route path="kanban" element={<KanbanBoard />} />
+          <Route path="menu" element={<MenuManager />} />
+          <Route path="settings" element={<StoreSettings />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }

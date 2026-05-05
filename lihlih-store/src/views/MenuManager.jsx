@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { KineticSwitch } from '../components/InteractiveControls';
 import { KineticButton, StockBadge } from '../components/UIPrimitives';
 import ItemEditorModal from '../components/ItemEditorModal';
 import { storeAPI } from '../services/api';
 
 export default function MenuManager() {
+  const { storeId } = useParams();
   const [menuItems, setMenuItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
 
-  const STORE_ID = 1; // Hardcoded for MVP
+  const STORE_ID = storeId; // Dynamic from URL
 
   useEffect(() => {
     fetchMenu();

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Keyboard } from 'react-native';
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { Colors, KineticButton, OasisTextArea } from './UIPrimitives';
 import InteractiveStarRating from './InteractiveStarRating';
 import { useSubmitReview } from '../hooks/useSubmitReview';
@@ -60,13 +60,13 @@ export default function ReviewBottomSheet({ order, clientId }: Props) {
         snapPoints={snapPoints}
         backdropComponent={renderBackdrop}
       >
-        <BottomSheetView style={styles.successContainer}>
+        <View style={styles.successContainer}>
           <Text style={styles.successIcon}>✅</Text>
           <Text style={styles.successTitle}>Merci pour votre avis !</Text>
           <Text style={styles.successSubtitle}>
             Vos retours aident {order.store?.name} à s'améliorer.
           </Text>
-        </BottomSheetView>
+        </View>
       </BottomSheetModal>
     );
   }
@@ -78,10 +78,10 @@ export default function ReviewBottomSheet({ order, clientId }: Props) {
       snapPoints={snapPoints}
       backdropComponent={renderBackdrop}
       enablePanDownToClose={!isPending}
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
     >
-      <BottomSheetView style={styles.contentContainer}>
+      <BottomSheetScrollView contentContainerStyle={styles.contentContainer}>
         <Text style={styles.title}>
           Comment était votre commande chez {order.store?.name} ?
         </Text>
@@ -131,7 +131,7 @@ export default function ReviewBottomSheet({ order, clientId }: Props) {
           style={{ marginTop: 20 }}
           disabled={!isReady || isPending}
         />
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheetModal>
   );
 }

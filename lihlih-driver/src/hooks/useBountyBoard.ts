@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { distance, point } from '@turf/turf';
 
 // Use the local network IP for testing on physical devices, or process.env
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.14:3000/api'; 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.12:3000/api'; 
 const STORE_DIR_KEY = '@lihlih_store_directory';
 
 export interface StoreDirectoryItem {

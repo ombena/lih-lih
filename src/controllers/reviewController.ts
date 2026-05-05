@@ -15,7 +15,7 @@ export const getUnreviewedOrders = async (req: Request, res: Response) => {
     const orders = await prisma.order.findMany({
       where: {
         client_id: parseInt(id as string),
-        status: 'Delivered',
+        status: { in: ['Delivered', 'Archived'] },
         review: { is: null } // Only orders without a review
       },
       include: { store: true },

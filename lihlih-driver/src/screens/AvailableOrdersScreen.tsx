@@ -29,18 +29,28 @@ import * as Location from 'expo-location';
 import DriverHeader from '../components/DriverHeader';
 import { KineticSwitch, KineticSlider } from "../components/UIPrimitives";
 import { OasisPulse, OasisLoadingOverlay } from "../components/KineticLoader";
+import { OasisOTPInput } from "../components/OasisOTPInput";
 
 const { height } = Dimensions.get("window");
 
 import { useBountyBoard } from "../hooks/useBountyBoard";
 import { StoreOrderSheet } from "../components/StoreOrderSheet";
+import { useMissionStore } from "../hooks/useMissionStore";
 
 // Use local IP for testing or process.env
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.14:3000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.12:3000/api';
 
 export default function AvailableOrdersScreen() {
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  
+  const { addMission, fetchMissions } = useMissionStore();
+
+  // OTP Modal State
+  const [isOTPVisible, setIsOTPVisible] = useState(false);
+  const [claimingOrderId, setClaimingOrderId] = useState<string | null>(null);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   // Request location permissions on mount
   useEffect(() => {
@@ -89,7 +99,7 @@ export default function AvailableOrdersScreen() {
     });
 
     try {
-      const fetchPromise = await fetch(`${API_BASE_URL}/stores/${store.id}/active-orders`);
+      const fetchPromise = await fetch(`${API_BASE_URL}/stores/${store.id}/active-orders?available_only=true`);
 
       if (fetchPromise.ok) {
         const data = await fetchPromise.json();
@@ -104,6 +114,61 @@ export default function AvailableOrdersScreen() {
       console.error("Failed to fetch store details:", error);
     } finally {
       setIsLoadingDetails(false);
+    }
+  };
+
+  const handleClaimPress = (orderId: string) => {
+    setClaimingOrderId(orderId);
+    setClaimError(null);
+    setIsOTPVisible(true);
+  };
+
+  const onPinSubmit = async (pin: string, deliveryFee: number) => {
+    setIsClaiming(true);
+    setClaimError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/${claimingOrderId}/claim`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driver_id: 1, // Hardcoded for now
+          pin_code: pin,
+          delivery_fee: deliveryFee
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success! Add to local store for "Mon Sac"
+        addMission(data.order);
+        
+        // Force a re-sync of active missions from server to be 100% sure
+        fetchMissions(1);
+
+        // Success! Remove the order from the local list
+        if (selectedStore) {
+          const updatedOrders = selectedStore.orders_list.filter((o: any) => o.id !== claimingOrderId);
+          setSelectedStore({ ...selectedStore, orders_list: updatedOrders });
+          
+          // If no more orders, close the sheet
+          if (updatedOrders.length === 0) {
+            bottomSheetRef.current?.close();
+          }
+        }
+        
+        setIsOTPVisible(false);
+        setClaimingOrderId(null);
+        // We could also show a success toast here
+      } else {
+        setClaimError(data.error || 'Échec de la réclamation');
+      }
+    } catch (error) {
+      console.error('Claim error:', error);
+      setClaimError('Erreur de connexion au serveur');
+    } finally {
+      setIsClaiming(false);
     }
   };
 
@@ -258,10 +323,20 @@ export default function AvailableOrdersScreen() {
           <StoreOrderSheet 
             key={selectedStore.id}
             selectedStore={selectedStore} 
-            isLoadingDetails={isLoadingDetails} 
+            isLoadingDetails={isLoadingDetails}
+            onClaimPress={handleClaimPress}
           />
         )}
       </BottomSheet>
+
+      {/* PIN MODAL */}
+      <OasisOTPInput 
+        isVisible={isOTPVisible}
+        isLoading={isClaiming}
+        error={claimError}
+        onClose={() => setIsOTPVisible(false)}
+        onSubmit={onPinSubmit}
+      />
       {/* GLOBAL FIXED RADAR (FOR OFFLINE / EMPTY / ACTIVATING) */}
       {(!isOnline || (isLoadingDetails && !selectedStore) || (isOnline && stores.length === 0)) && (
         <View style={styles.globalRadarContainer} pointerEvents="none">

@@ -40,6 +40,15 @@ export default function OrdersScreen() {
     );
   }
 
+  const handleArchiveOrder = async (orderId: number) => {
+    try {
+      await axios.patch(`${API_URL}/orders/${orderId}/archive`);
+      refetch();
+    } catch (error) {
+      console.error('Error archiving order:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -50,7 +59,12 @@ export default function OrdersScreen() {
       <FlatList
         data={orders}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <ActiveOrderCard order={item} />}
+        renderItem={({ item }) => (
+          <ActiveOrderCard 
+            order={item} 
+            onArchive={handleArchiveOrder} 
+          />
+        )}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl 

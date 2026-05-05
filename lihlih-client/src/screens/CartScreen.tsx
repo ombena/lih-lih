@@ -1,13 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useMultiStoreCheckout } from '../hooks/useMultiStoreCheckout';
-import { Colors, SurfaceCard } from '../components/UIPrimitives';
+import { Colors, SurfaceCard, OasisInput } from '../components/UIPrimitives';
 import { useCartStore } from '../store/useCartStore';
-import { MapPin, ShoppingCart, Trash2 } from 'lucide-react-native';
+import { MapPin, ShoppingCart, Trash2, MessageSquare } from 'lucide-react-native';
 import { SwipeToCheckoutButton } from '../components/SwipeToCheckoutButton';
 
 export default function CartScreen() {
-  const { groupedOrders, submitAllOrders, isReady, isSubmitting, defaultPreset } = useMultiStoreCheckout();
+  const {
+    groupedOrders,
+    submitAllOrders,
+    instructions,
+    updateInstructions,
+    isReady,
+    isSubmitting,
+    defaultPreset
+  } = useMultiStoreCheckout();
   const removeItem = useCartStore((state) => state.removeItem);
   const cartItems = useCartStore((state) => state.items);
 
@@ -28,10 +36,17 @@ export default function CartScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.screenTitle}>Mon Panier</Text>
-        
+
         {/* Delivery Destination */}
         <SurfaceCard style={styles.deliveryCard}>
           <View style={styles.deliveryHeader}>
@@ -46,29 +61,41 @@ export default function CartScreen() {
         </SurfaceCard>
 
         {/* Store Groups */}
-        {Object.entries(groupedOrders).map(([storeId, storeData]) => (
-          <SurfaceCard key={storeId} style={styles.storeGroupCard}>
-            <View style={styles.storeGroupHeader}>
-              <Text style={styles.storeGroupName}>{storeData.store_name}</Text>
-              <Text style={styles.storeTotal}>{calculateStoreTotal(storeData.items)} DA</Text>
-            </View>
-            
-            {storeData.items.map((item) => (
-              <View key={item.id} style={styles.cartItem}>
-                <View style={styles.itemQtyContainer}>
-                  <Text style={styles.itemQty}>{item.quantity}x</Text>
-                </View>
-                <View style={styles.itemDetails}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemPrice}>{item.price} DA</Text>
-                </View>
-                <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.deleteButton}>
-                  <Trash2 color={Colors.error} size={20} />
-                </TouchableOpacity>
+        {Object.entries(groupedOrders).map(([storeId, storeData]) => {
+          const sId = parseInt(storeId);
+          return (
+            <SurfaceCard key={storeId} style={styles.storeGroupCard}>
+              <View style={styles.storeGroupHeader}>
+                <Text style={styles.storeGroupName}>{storeData.store_name}</Text>
+                <Text style={styles.storeTotal}>{calculateStoreTotal(storeData.items)} DA</Text>
               </View>
-            ))}
-          </SurfaceCard>
-        ))}
+
+              {storeData.items.map((item) => (
+                <View key={item.id} style={styles.cartItem}>
+                  <View style={styles.itemQtyContainer}>
+                    <Text style={styles.itemQty}>{item.quantity}x</Text>
+                  </View>
+                  <View style={styles.itemDetails}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemPrice}>{item.price} DA</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.deleteButton}>
+                    <Trash2 color={Colors.error} size={20} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+
+              <View style={styles.instructionContainer}>
+                <OasisInput
+                  placeholder="Instructions spéciales (ex: pas d'oignons...)"
+                  value={instructions[sId] || ''}
+                  onChangeText={(text: string) => updateInstructions(sId, text)}
+                  leftIcon={<MessageSquare color={Colors.onSurfaceVariant} size={18} />}
+                />
+              </View>
+            </SurfaceCard>
+          );
+        })}
 
         {/* Global Summary */}
         <View style={styles.summaryContainer}>
@@ -80,16 +107,16 @@ export default function CartScreen() {
             <Text style={styles.grandTotalValue}>{grandTotal} DA</Text>
           </View>
         </View>
-
+        <View style={styles.checkoutBar}>
+          <SwipeToCheckoutButton
+            onConfirm={submitAllOrders}
+            isReady={isReady}
+          />
+        </View>
       </ScrollView>
 
       {/* Sticky Checkout Bar */}
-      <View style={styles.checkoutBar}>
-        <SwipeToCheckoutButton 
-          onConfirm={submitAllOrders}
-          isReady={isReady}
-        />
-      </View>
+
 
       {/* Loading Overlay */}
       {isSubmitting && (
@@ -98,7 +125,7 @@ export default function CartScreen() {
           <Text style={styles.loadingText}>Envoi de vos commandes...</Text>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -219,6 +246,11 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 8,
+  },
+  instructionContainer: {
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.background,
   },
   summaryContainer: {
     marginTop: 24,

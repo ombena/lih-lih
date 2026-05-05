@@ -7,10 +7,11 @@ import prisma from '../prismaClient';
  * Generates OTP, calculates totals, and EMITS REAL-TIME ALARM to the store.
  */
 export const createOrder = async (req: Request, res: Response) => {
-  const { client_id, store_id, items, dropoff_lat, dropoff_lng } = req.body;
+  const { client_id, store_id, items, dropoff_lat, dropoff_lng, instructions } = req.body;
 
   try {
     const deliveryPin = Math.floor(1000 + Math.random() * 9000).toString();
+    const pickupPin = Math.floor(1000 + Math.random() * 9000).toString();
 
     const itemIds = items.map((i: any) => i.item_id);
     const dbItems = await prisma.item.findMany({
@@ -53,10 +54,12 @@ export const createOrder = async (req: Request, res: Response) => {
           store_id,
           status: 'Pending',
           delivery_pin: deliveryPin,
+          pickup_pin: pickupPin,
           food_total: foodTotal,
           delivery_fee: 0, 
           dropoff_lat,
-          dropoff_lng
+          dropoff_lng,
+          instructions
         }
       });
 
@@ -229,72 +232,7 @@ export const driverPickupOrder = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * PHASE 4: Delivery Confirmation (The OTP Handshake)
- * This is the final step that closes the transaction.
- * Updated: Per new business plan, no platform debt is charged to the driver.
- */
-export const completeOrder = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { pin } = req.body;
 
-  try {
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id as string) }
-    });
-
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-
-    // 1. Verify the PIN (OTP)
-    if (order.delivery_pin !== pin) {
-      return res.status(400).json({ error: 'Invalid Delivery PIN. Handover not authorized.' });
-    }
-
-    // 2. Mark order as delivered
-    const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id as string) },
-      data: { status: 'Delivered' },
-      include: { items: true }
-    });
-
-    // 3. Social Proof Aggregation (Atomic Increments)
-    // Update Store total orders
-    await prisma.store.update({
-      where: { id: order.store_id },
-      data: { total_orders_count: { increment: 1 } }
-    });
-
-    // Update individual Item sales counts (finding by name since OrderItem is decoupled)
-    for (const item of updatedOrder.items) {
-      const dbItem = await prisma.item.findFirst({
-        where: { store_id: updatedOrder.store_id, name: item.food_name }
-      });
-      if (dbItem) {
-        await prisma.item.update({
-          where: { id: dbItem.id },
-          data: { total_sold_count: { increment: item.quantity } }
-        });
-      }
-    }
-
-    // Notify Client
-    const io: Server = req.app.get('io');
-    io.to(`client_${updatedOrder.client_id}`).emit('order_status_updated', {
-      order_id: updatedOrder.id,
-      new_status: 'Delivered',
-      updated_at: new Date()
-    });
-
-    res.json({ 
-      message: '✅ Delivery Successful! Order marked as completed.', 
-      order: updatedOrder 
-    });
-
-  } catch (error) {
-    console.error('Error completing order:', error);
-    res.status(500).json({ error: 'Failed to complete delivery' });
-  }
-};
 
 /**
  * PHASE 5: "I am Arriving" Notification
@@ -380,7 +318,7 @@ export const getActiveClientOrders = async (req: Request, res: Response) => {
     const orders = await prisma.order.findMany({
       where: {
         client_id: parseInt(id as string),
-        status: { notIn: ['Delivered', 'Cancelled'] } // Only show active journeys
+        status: { notIn: ['Archived', 'Cancelled'] } // Include Delivered so it stays on screen
       },
       include: { 
         items: true, 
@@ -433,5 +371,191 @@ export const getPulse = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error in getPulse:', error);
     res.status(500).json({ error: 'Failed to fetch pulse' });
+  }
+};
+
+/**
+ * PHASE 2.5: Driver Claims a Specific Order with PIN
+ * Updated to allow selective claiming from a store's list.
+ */
+export const claimSpecificOrder = async (req: Request, res: Response) => {
+  const { id } = req.params; // order_id
+  const { driver_id, pin_code } = req.body;
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Guard: Check driver capacity (Max 5 active missions)
+      const activeCount = await tx.order.count({
+        where: {
+          driver_id: parseInt(driver_id as string),
+          status: { in: ['Accepted_by_Driver', 'Picked_Up', 'Arriving'] }
+        }
+      });
+
+      if (activeCount >= 5) {
+        throw new Error('MAX_MISSIONS_REACHED');
+      }
+
+      // 2. Lock & Verify the specific order
+      const order = await tx.order.findUnique({
+        where: { id: parseInt(id as string) }
+      });
+
+      if (!order || order.status !== 'Waiting' || order.driver_id !== null) {
+        throw new Error('ORDER_UNAVAILABLE');
+      }
+
+      // 3. Verify PIN
+      if (order.pickup_pin !== pin_code) {
+        throw new Error('INVALID_PIN');
+      }
+
+      const foodTotal = Number(order.food_total);
+      const fee = Number(req.body.delivery_fee || 0);
+
+      // 4. Update order (Assign driver + Status change + Calc totals)
+      const result = await tx.order.update({
+        where: { id: parseInt(id as string) },
+        data: {
+          driver_id: parseInt(driver_id as string),
+          status: 'Picked_Up',
+          delivery_fee: fee,
+          grand_total: foodTotal + fee
+        },
+        include: {
+          store: true,
+          items: true,
+          client: true
+        }
+      });
+
+      // 5. Trigger radar refresh for other drivers
+      const io: Server = req.app.get('io');
+      io.emit('radar_refresh_needed');
+
+      // 6. Notify Client that driver has picked up their order
+      io.to(`client_${result.client_id}`).emit('order_status_updated', {
+        order_id: result.id,
+        new_status: 'Picked_Up',
+        updated_at: new Date()
+      });
+
+      return result;
+    });
+
+    res.json({ message: 'Order successfully claimed!', order: result });
+
+  } catch (error: any) {
+    console.error('Error claiming specific order:', error);
+    if (error.message === 'MAX_MISSIONS_REACHED') {
+      return res.status(403).json({ error: 'Votre sac est plein (Maximum 5 missions).' });
+    }
+    if (error.message === 'ORDER_UNAVAILABLE') {
+      return res.status(404).json({ error: 'Désolé, cette commande n\'est plus disponible.' });
+    }
+    if (error.message === 'INVALID_PIN') {
+      return res.status(400).json({ error: 'Code PIN incorrect. Veuillez vérifier avec le commerçant.' });
+    }
+    res.status(500).json({ error: 'Erreur serveur lors de la réclamation.' });
+  }
+};
+
+/**
+ * Gets all active missions for a driver
+ */
+export const getActiveMissions = async (req: Request, res: Response) => {
+  const { driver_id } = req.query;
+
+  if (!driver_id || isNaN(parseInt(driver_id as string))) {
+    return res.status(400).json({ error: 'Valid Driver ID is required' });
+  }
+
+  try {
+    const missions = await prisma.order.findMany({
+      where: {
+        driver_id: parseInt(driver_id as string),
+        status: { in: ['Accepted_by_Driver', 'Picked_Up', 'Arriving'] }
+      },
+      include: {
+        store: true,
+        client: true,
+        items: true
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.json(missions);
+  } catch (error) {
+    console.error('Error fetching active missions:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Final Phase: Driver delivers order and inputs Client PIN to collect Cash.
+ */
+export const completeOrder = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { pin } = req.body;
+
+  try {
+    const completedOrder = await prisma.$transaction(async (tx) => {
+      // 1. Verify the order exists and is currently in the dropoff phase
+      const order = await tx.order.findUnique({ where: { id: parseInt(id as string) } });
+
+      if (!order || !['Picked_Up', 'Arriving'].includes(order.status)) {
+        throw new Error('INVALID_STATE');
+      }
+
+      // 2. Validate the Client's Delivery PIN
+      if (order.delivery_pin !== pin) {
+        throw new Error('INVALID_PIN');
+      }
+
+      // 3. Mark as Delivered
+      const updated = await tx.order.update({
+        where: { id: order.id },
+        data: { status: 'Delivered' }
+      });
+
+      // 4. Increment the Store's Social Proof Counter
+      await tx.store.update({
+        where: { id: order.store_id },
+        data: { total_orders_count: { increment: 1 } }
+      });
+
+      return updated;
+    });
+
+    // 5. Trigger WebSockets for live UI updates
+    const io = req.app.get('io');
+    
+    // Tell the Client App the order is done (Triggers the 5-Star Review Modal!)
+    io.to(`client_${completedOrder.client_id}`).emit('order_status_updated', { 
+      order_id: completedOrder.id, new_status: 'Delivered' 
+    });
+
+    res.json(completedOrder);
+
+  } catch (error: any) {
+    if (error.message === 'INVALID_PIN') return res.status(400).json({ error: 'Code PIN incorrect. Veuillez vérifier avec le client.' });
+    if (error.message === 'INVALID_STATE') return res.status(400).json({ error: 'Cette commande ne peut pas être finalisée.' });
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+/**
+ * Client archives a delivered order so it no longer shows in the active list.
+ */
+export const archiveOrder = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const updated = await prisma.order.update({
+      where: { id: parseInt(id as string) },
+      data: { status: 'Archived' }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to archive order' });
   }
 };

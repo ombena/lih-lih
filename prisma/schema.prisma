@@ -102,7 +102,9 @@ model Order {
   food_total   Decimal
   delivery_fee Decimal? // Filled by the driver later
   grand_total  Decimal? // Calculated later
-  delivery_pin String   // The 4-digit OTP
+  delivery_pin String   // The 4-digit OTP for the client
+  pickup_pin   String?  // The 4-digit OTP for the store-to-driver handover
+  instructions String?  // Special requests (e.g., "No onions", "Add extra cheese")
   created_at   DateTime @default(now())
   
   // Relations linking to the other tables

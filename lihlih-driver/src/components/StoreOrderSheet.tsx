@@ -1,16 +1,32 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { MapPin, ShoppingBag, Receipt, RefreshCw } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking, Platform } from 'react-native';
+import { MapPin, ShoppingBag, Receipt, RefreshCw, Navigation, ArrowRight } from 'lucide-react-native';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { OasisPulse, KineticRingLoader } from './KineticLoader';
 
 interface StoreOrderSheetProps {
   selectedStore: any;
   isLoadingDetails: boolean;
+  onClaimPress: (orderId: string) => void;
 }
 
-export const StoreOrderSheet = ({ selectedStore, isLoadingDetails }: StoreOrderSheetProps) => {
+export const StoreOrderSheet = ({ selectedStore, isLoadingDetails, onClaimPress }: StoreOrderSheetProps) => {
   if (!selectedStore) return null;
+
+  const navigateToStore = () => {
+    const lat = selectedStore.lat;
+    const lng = selectedStore.lng;
+    const label = encodeURIComponent(selectedStore.name);
+    
+    const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
+    const latLng = `${lat},${lng}`;
+    const url = Platform.select({
+      ios: `${scheme}${label}@${latLng}`,
+      android: `${scheme}${latLng}(${label})`
+    });
+
+    if (url) Linking.openURL(url);
+  };
 
   return (
     <View key={selectedStore.id} style={styles.sheetContent}>
@@ -36,6 +52,17 @@ export const StoreOrderSheet = ({ selectedStore, isLoadingDetails }: StoreOrderS
           <Text style={styles.bagsLabel}>SACS</Text>
         </View>
       </View>
+
+      <Pressable 
+        onPress={navigateToStore}
+        style={({ pressed }) => [
+          styles.navBtn,
+          { opacity: pressed ? 0.8 : 1 }
+        ]}
+      >
+        <Navigation color="#FFF" size={16} fill="#FFF" />
+        <Text style={styles.navBtnText}>NAVIGUER VERS LE RESTAURANT</Text>
+      </Pressable>
 
       <View style={styles.ordersListContainer}>
         <Text style={styles.ordersListTitle}>
@@ -75,17 +102,22 @@ export const StoreOrderSheet = ({ selectedStore, isLoadingDetails }: StoreOrderS
                     {order.address}
                   </Text>
                 </View>
+
+                <Pressable 
+                  onPress={() => onClaimPress(order.id)}
+                  style={({ pressed }) => [
+                    styles.itemClaimBtn,
+                    { opacity: pressed ? 0.8 : 1 }
+                  ]}
+                >
+                  <Text style={styles.itemClaimBtnText}>ACCEPTER (SAISIR PIN)</Text>
+                  <ArrowRight color="#FFF" size={14} />
+                </Pressable>
               </View>
             ))}
           </BottomSheetScrollView>
         )}
       </View>
-
-      <Pressable style={({ pressed }) => [styles.pinBtn, { opacity: pressed ? 0.9 : 1 }]}>
-        <Text style={styles.pinBtnText}>
-          SAISIR LE CODE PIN AU COMPTOIR
-        </Text>
-      </Pressable>
     </View>
   );
 };
@@ -216,4 +248,38 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1,
   },
+  navBtn: {
+    backgroundColor: '#2c2f30',
+    flexDirection: 'row',
+    height: 50,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#3a3d3e',
+  },
+  navBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  itemClaimBtn: {
+    backgroundColor: '#ae2900',
+    flexDirection: 'row',
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  itemClaimBtnText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  }
 });

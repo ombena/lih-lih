@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, RefreshControl } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDiscoveryFeed } from '../hooks/useDiscoveryFeed';
 import { Colors, OasisInput, SurfaceCard } from '../components/UIPrimitives';
 import { Search, Star, ChefHat, CheckSquare, Package, Coins, Zap, ShoppingBag } from 'lucide-react-native';
@@ -42,8 +42,15 @@ export default function DiscoveryScreen() {
   const navigation = useNavigation<any>();
 
   // PHASE 6: Feedback Loop Trigger
-  const { data: unreviewedOrders } = useUnreviewedOrders(CLIENT_ID);
+  const { data: unreviewedOrders, refetch: refetchUnreviewed } = useUnreviewedOrders(CLIENT_ID);
   const orderToReview = unreviewedOrders?.[0];
+
+  // Force refetch when screen comes into focus (e.g. returning from OrdersScreen)
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchUnreviewed();
+    }, [refetchUnreviewed])
+  );
 
   const getPillarRating = (sum: number, count: number) => {
     if (!count || count === 0) return "-";
@@ -155,6 +162,7 @@ export default function DiscoveryScreen() {
 
       {orderToReview && (
         <ReviewBottomSheet
+          key={orderToReview.id}
           order={orderToReview}
           clientId={CLIENT_ID}
         />

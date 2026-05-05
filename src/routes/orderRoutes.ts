@@ -13,23 +13,34 @@ router.post('/', orderController.createOrder);
 // 2. Store accepts (moves to 'Preparing')
 router.patch('/:id/store-accept', orderController.storeAcceptOrder);
 
-// NEW: Store marks as ready (moves to 'Waiting')
+// 3. Store marks as ready (moves to 'Waiting')
 router.patch('/:id/ready', orderController.markOrderReady);
 
-// 3. Driver accepts (Assigns driver_id)
+// 4. Driver accepts (Assigns driver_id)
 router.patch('/:id/driver-accept', orderController.driverAcceptOrder);
 
-// 4. Driver picks up (Sets delivery_fee)
+// 5. Driver claims specific order via PIN
+router.patch('/:id/claim', orderController.claimSpecificOrder);
+
+// 6. Driver picks up (Sets delivery_fee)
 router.patch('/:id/pickup', orderController.driverPickupOrder);
 
-// 5. Driver is arriving (Notify Client)
+// 7. Driver is arriving (Notify Client)
 router.patch('/:id/arriving', orderController.arrivingNotification);
 
-// 6. Complete Delivery (Verify PIN)
+// 8. Complete Delivery (Verify PIN)
 router.patch('/:id/complete', orderController.completeOrder);
 
+// 9. Archive Order (Hide from active list)
+router.patch('/:id/archive', orderController.archiveOrder);
 
-// 7. General info
+// ==========================================
+// 🚨 BUG FIX: MISSION ROUTE 🚨
+// MUST BE PLACED BEFORE '/:id'
+// ==========================================
+router.get('/active-missions', orderController.getActiveMissions);
+
+// 9. General info (Dynamic ID catching MUST be last)
 router.get('/:id', orderController.getOrderDetails);
 router.get('/client/:id/active', orderController.getActiveClientOrders);
 router.get('/client/:id/unreviewed', getUnreviewedOrdersFromReview);

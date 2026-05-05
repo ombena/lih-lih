@@ -110,13 +110,24 @@ export const getStoreById = async (req: Request, res: Response) => {
  */
 export const getActiveOrders = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const { available_only } = req.query;
+
   try {
+    const whereClause: any = {
+      store_id: parseInt(id as string),
+      status: { in: ['Preparing', 'Waiting', 'Accepted_by_Driver'] }
+    };
+
+    // If driver app asks for available orders, exclude those already assigned
+    const isAvailableOnly = available_only === 'true' || available_only === '1';
+    
+    if (isAvailableOnly) {
+      whereClause.status = 'Waiting';
+      whereClause.driver_id = null;
+    }
+
     const orders = await prisma.order.findMany({
-      where: {
-        store_id: parseInt(id as string),
-        // We only want orders that are currently active in the kitchen
-        status: { in: ['Preparing', 'Waiting', 'Accepted_by_Driver'] }
-      },
+      where: whereClause,
       include: {
         items: true,
         driver: true

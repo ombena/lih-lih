@@ -7,7 +7,7 @@ import { formatSocialProofNumber } from '../utils/formatters';
 import { useCartStore } from '../store/useCartStore';
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.14:3000/api';
+const API_URL = 'http://192.168.1.12:3000/api';
 
 const DEFAULT_STORE_IMAGE = require('../../assets/defaults/store-placeholder.png');
 

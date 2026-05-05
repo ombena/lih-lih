@@ -95,7 +95,10 @@ export const storeAPI = {
   // NEW: Create Menu Item
   createMenuItem: async (storeId, itemData) => {
     try {
-      const response = await axios.post(`${API_URL}/stores/${storeId}/items`, itemData);
+      const response = await axios.post(
+        `${API_URL}/stores/${storeId}/items`,
+        itemData,
+      );
       return response.data;
     } catch (error) {
       console.error("Failed to create menu item:", error);
@@ -128,7 +131,10 @@ export const storeAPI = {
   // NEW: Update Store Profile
   updateStoreProfile: async (storeId, profileData) => {
     try {
-      const response = await axios.put(`${API_URL}/stores/${storeId}`, profileData);
+      const response = await axios.put(
+        `${API_URL}/stores/${storeId}`,
+        profileData,
+      );
       return response.data;
     } catch (error) {
       console.error("Failed to update store profile:", error);
@@ -139,7 +145,10 @@ export const storeAPI = {
   // NEW: Toggle Store Status
   toggleStoreStatus: async (storeId, isOpen) => {
     try {
-      const response = await axios.patch(`${API_URL}/stores/${storeId}/status`, { is_open: isOpen });
+      const response = await axios.patch(
+        `${API_URL}/stores/${storeId}/status`,
+        { is_open: isOpen },
+      );
       return response.data;
     } catch (error) {
       console.error("Failed to toggle store status:", error);

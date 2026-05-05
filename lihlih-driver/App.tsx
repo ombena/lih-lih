@@ -10,21 +10,18 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import DashboardScreen from './src/screens/DashboardScreen';
 import AvailableOrdersScreen from './src/screens/AvailableOrdersScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import ActiveMissionsScreen from './src/screens/ActiveMissionsScreen';
+import { useMissionStore } from './src/hooks/useMissionStore';
 
 const queryClient = new QueryClient();
 const Tab = createBottomTabNavigator();
 
-const MyBagPlaceholder = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121415' }}>
-    <Briefcase color="#abadae" size={48} />
-    <Text style={{ marginTop: 16, fontSize: 18, fontWeight: '900', color: '#FFF' }}>Mon Sac</Text>
-    <Text style={{ color: '#595c5d' }}>Aucune commande acceptée</Text>
-  </View>
-);
+
 
 
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
+  const { activeMissions } = useMissionStore();
   return (
     <View style={styles.bottomNav}>
       {state.routes.map((route: any, index: number) => {
@@ -62,7 +59,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           >
             <View>
               <IconComponent color={color} size={24} />
-              {route.name === 'Mon Sac' && <View style={styles.navBadge} />}
+              {route.name === 'Mon Sac' && activeMissions.length > 0 && (
+                <View style={styles.navBadge}>
+                  <Text style={styles.navBadgeText}>{activeMissions.length}</Text>
+                </View>
+              )}
             </View>
             <Text style={[styles.navText, isFocused && { color: '#ae2900' }]}>{label.toUpperCase()}</Text>
           </Pressable>
@@ -83,7 +84,7 @@ export default function App() {
           >
             <Tab.Screen name="Dashboard" component={DashboardScreen} />
             <Tab.Screen name="Missions" component={AvailableOrdersScreen} />
-            <Tab.Screen name="Mon Sac" component={MyBagPlaceholder} />
+            <Tab.Screen name="Mon Sac" component={ActiveMissionsScreen} />
             <Tab.Screen name="Profil" component={ProfileScreen} />
           </Tab.Navigator>
         </NavigationContainer>
@@ -112,5 +113,6 @@ const styles = StyleSheet.create({
   navItem: { alignItems: 'center', gap: 4 },
   navItemInactive: { alignItems: 'center', gap: 4, opacity: 0.4 },
   navText: { fontSize: 10, fontWeight: '900', letterSpacing: 1, color: '#FFF' },
-  navBadge: { position: 'absolute', top: -4, right: -4, width: 12, height: 12, borderRadius: 6, backgroundColor: '#ae2900', borderWidth: 2, borderColor: '#1a1c1d' },
+  navBadge: { position: 'absolute', top: -4, right: -10, width: 18, height: 18, borderRadius: 9, backgroundColor: '#ae2900', borderWidth: 2, borderColor: '#1a1c1d', justifyContent: 'center', alignItems: 'center' },
+  navBadgeText: { color: '#FFF', fontSize: 8, fontWeight: '900' }
 });
