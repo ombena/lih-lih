@@ -14,7 +14,6 @@ import {
   Phone,
   Navigation,
   ShoppingBag,
-  ChevronRight,
   PackageCheck,
   CircleDashed,
   Lock

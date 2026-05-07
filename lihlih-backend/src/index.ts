@@ -4,6 +4,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import orderRoutes from './routes/orderRoutes';
 import storeRoutes from './routes/storeRoutes';
+import './workers/orderWorker'; // Start the BullMQ worker
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -16,12 +17,19 @@ app.use(express.json());
 // We need a raw HTTP server to attach Socket.io to, instead of just using app.listen()
 const httpServer = createServer(app);
 
-// Initialize Socket.io with CORS settings to allow your React store app to connect
+import { createAdapter } from '@socket.io/redis-adapter';
+import redis from './redisClient';
+
+// Initialize Socket.io with Redis Adapter for horizontal scaling
+const pubClient = redis.duplicate();
+const subClient = redis.duplicate();
+
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // En production, mettez l'URL exacte de votre dashboard React
+    origin: "*", 
     methods: ["GET", "POST"]
-  }
+  },
+  adapter: createAdapter(pubClient, subClient)
 });
 
 // Make the 'io' instance available to our route controllers via the Express req object
@@ -44,6 +52,22 @@ io.on('connection', (socket) => {
   socket.on('join_client_room', (clientId) => {
     socket.join(`client_${clientId}`);
     console.log(`📱 Client ${socket.id} joined room: client_${clientId}`);
+  });
+
+  // --- PHASE 3: REAL-TIME GPS TRACKING (Redis GeoHashes) ---
+  socket.on('driver_location_update', async (data) => {
+    const { driverId, lat, lng } = data;
+    if (!driverId || !lat || !lng) return;
+
+    try {
+      // Store driver location in Redis GeoSet (TTL of 1 hour for active drivers)
+      await redis.geoadd('drivers:locations', lng, lat, driverId.toString());
+      // Set expiration to clean up inactive drivers (optional, usually handled by separate cleanup or just overwrite)
+      
+      // console.log(`📍 GPS: Driver #${driverId} at [${lat}, ${lng}]`);
+    } catch (err) {
+      console.error('❌ Redis GeoAdd Error:', err);
+    }
   });
 
   socket.on('disconnect', () => {

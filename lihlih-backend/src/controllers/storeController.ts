@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import prisma from '../prismaClient';
+import redis from '../redisClient';
+
 
 /**
  * Increments the version for a specific key in the SystemRegistry.
@@ -319,6 +321,9 @@ export const updateStoreProfile = async (req: Request, res: Response) => {
     // Increment global store directory version
     await incrementSystemVersion('stores_directory');
     
+    // ⚡ Invalidate Redis Cache
+    await redis.del('system:stores_directory');
+    
     res.json(updatedStore);
   } catch (error) {
     console.error('Error updating store profile:', error);
@@ -357,6 +362,9 @@ export const toggleStoreStatus = async (req: Request, res: Response) => {
     // Increment global store directory version
     await incrementSystemVersion('stores_directory');
 
+    // ⚡ Invalidate Redis Cache
+    await redis.del('system:stores_directory');
+
     res.json(updatedStore);
   } catch (error) {
     console.error('Error toggling store status:', error);
@@ -364,17 +372,25 @@ export const toggleStoreStatus = async (req: Request, res: Response) => {
   }
 };
 
+
 /**
  * Fetches the static store directory for local caching by the driver app.
- * Returns only essential fields (id, name, lat, lng, is_open).
+ * Returns only essential fields (id, name, lat, lng, image_url, etc).
+ * Implementation: Cache-Aside pattern with Redis.
  */
 export const getStoreDirectory = async (req: Request, res: Response) => {
-  const { last_sync } = req.query;
+  const CACHE_KEY = 'system:stores_directory';
 
   try {
-    // Note: Since Prisma schema does not currently have updated_at on Store,
-    // we return all stores. In the future, we can add Delta Sync logic here 
-    // by comparing last_sync with an updated_at field.
+    // 1. Try Cache First
+    const cachedData = await redis.get(CACHE_KEY);
+    if (cachedData) {
+      console.log('⚡ Serving Store Directory from Redis Cache');
+      return res.json(JSON.parse(cachedData));
+    }
+
+    // 2. Fetch from DB
+    console.log('🔄 Cache Miss - Fetching Store Directory from Database');
     const stores = await prisma.store.findMany({
       select: {
         id: true,
@@ -388,7 +404,9 @@ export const getStoreDirectory = async (req: Request, res: Response) => {
       }
     });
 
-    console.log(`DEBUG [getStoreDirectory] Serving ${stores.length} stores to client.`);
+    // 3. Save to Cache (1 hour TTL is enough for directory sync)
+    await redis.set(CACHE_KEY, JSON.stringify(stores), 'EX', 3600);
+
     res.json(stores);
   } catch (error) {
     console.error('Error in getStoreDirectory:', error);

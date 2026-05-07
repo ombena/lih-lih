@@ -1,23 +1,28 @@
 {
   "scripts": {
-    "dev": "npx ts-node --transpile-only src/index.ts",
-    "start": "npx ts-node --transpile-only src/index.ts"
+    "dev": "./node_modules/.bin/nodemon --watch 'src/**/*.ts' --exec ./node_modules/.bin/ts-node src/index.ts",
+    "build": "npx tsc",
+    "start": "node dist/src/index.js"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "^7.7.0",
+    "@prisma/client": "6.2.1",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "bullmq": "^5.76.6",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
-    "socket.io": "^4.8.3"
+    "ioredis": "^5.10.1",
+    "redlock": "^5.0.0-beta.2",
+    "socket.io": "^4.8.3",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/hammerjs": "^2.0.46",
-    "@types/node": "^25.6.0",
-    "@types/socket.io": "^3.0.1",
-    "prisma": "^7.7.0"
+    "@types/node": "^22.10.7",
+    "nodemon": "^3.1.14",
+    "prisma": "6.2.1",
+    "ts-node": "^10.9.2"
   },
   "prisma": {
     "seed": "ts-node prisma/seeds/seed.ts"

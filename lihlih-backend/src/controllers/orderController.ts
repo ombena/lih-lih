@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { Server } from 'socket.io';
 import prisma from '../prismaClient';
+import redlock from '../lockManager';
+
 
 /**
  * Creates a new order with multiple items.
@@ -138,6 +140,23 @@ export const createOrder = async (req: Request, res: Response) => {
       }
     });
     // ----------------------------------------
+
+    // ----------------------------------------
+    
+    // --- PHASE 6: AUTO-CANCELLATION GUARD (BullMQ) ---
+    // Schedule a job to check this order in 15 minutes
+    try {
+      const { orderQueue } = await import('../queues/orderQueue');
+      await orderQueue.add(
+        'auto-cancel-check', 
+        { orderId: result.id }, 
+        { delay: 15 * 60 * 1000 } // 15 minutes
+      );
+      console.log(`⏲️ Auto-cancel job scheduled for Order #${result.id}`);
+    } catch (queueError) {
+      console.error('❌ Failed to schedule auto-cancel job:', queueError);
+      // We don't fail the request if the queue fails, but we log it
+    }
 
     res.status(201).json({ 
       message: 'Order created successfully. Store notified.', 
@@ -395,13 +414,20 @@ export const getPulse = async (req: Request, res: Response) => {
  * PHASE 2.5: Driver Claims a Specific Order with PIN
  * Updated to allow selective claiming from a store's list.
  */
+
 export const claimSpecificOrder = async (req: Request, res: Response) => {
   const { id } = req.params; // order_id
   const { driver_id, pin_code } = req.body;
 
+  const lockKey = `lock:order_claim:${id}`;
+  let lock;
+
   try {
+    // 1. Acquire Distributed Lock (5 second TTL)
+    lock = await redlock.acquire([lockKey], 5000);
+
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Guard: Check driver capacity (Max 5 active missions)
+      // 2. Guard: Check driver capacity (Max 5 active missions)
       const activeCount = await tx.order.count({
         where: {
           driver_id: parseInt(driver_id as string),
@@ -413,7 +439,7 @@ export const claimSpecificOrder = async (req: Request, res: Response) => {
         throw new Error('MAX_MISSIONS_REACHED');
       }
 
-      // 2. Lock & Verify the specific order
+      // 3. Verify the specific order
       const order = await tx.order.findUnique({
         where: { id: parseInt(id as string) }
       });
@@ -474,6 +500,14 @@ export const claimSpecificOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Code PIN incorrect. Veuillez vérifier avec le commerçant.' });
     }
     res.status(500).json({ error: 'Erreur serveur lors de la réclamation.' });
+  } finally {
+    if (lock) {
+      try {
+        await lock.release();
+      } catch (err) {
+        console.error('❌ Failed to release lock:', err);
+      }
+    }
   }
 };
 

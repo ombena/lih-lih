@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: lihlih-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
+      POSTGRES_DB: ${DB_NAME:-lihlih_db}
+    ports:
+      - "5432:5432" # Open for Prisma Studio / DBeaver
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pgbouncer:
+    image: edoburu/pgbouncer
+    container_name: lihlih-pgbouncer
+    restart: always
+    environment:
+      DATABASE_URL: "postgres://${DB_USER:-postgres}:${DB_PASSWORD:-admin123}@db:5432/${DB_NAME:-lihlih_db}"
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 20
+      AUTH_TYPE: any
+      LISTEN_PORT: 6432
+    ports:
+      - "6432:6432"
+    depends_on:
+      - db
+
+  redis:
+    image: redis:7-alpine
+    container_name: lihlih-redis
+    restart: always
+    ports:
+      - "6379:6379" # Open for Redis Insight
+    volumes:
+      - redisdata:/data
+
+  api:
+    build: 
+      context: ./lihlih-backend
+      target: development
+    container_name: lihlih-api
+    restart: always
+    ports:
+      - "3000:3000"
+    # OVERRIDE FOR LOCAL DEV:
+    command: npm run dev 
+    volumes:
+      - ./lihlih-backend:/usr/src/app
+      - /usr/src/app/node_modules # Prevents local node_modules from overwriting container's
+    env_file:
+      - .env
+    depends_on:
+      - pgbouncer
+      - redis
+
+volumes:
+  pgdata:
+  redisdata:

@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: lihlih-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    image: edoburu/pgbouncer
+    container_name: lihlih-pgbouncer-prod
+    restart: always
+    environment:
+      DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}"
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 2000
+      DEFAULT_POOL_SIZE: 50
+      AUTH_TYPE: any
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "6432:6432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: lihlih-redis-prod
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: 
+      context: ./lihlih-backend
+    container_name: lihlih-api-prod
+    restart: always
+    environment:
+      DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?pgbouncer=true"
+      DIRECT_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}"
+      REDIS_URL: "redis://redis:6379"
+      PORT: 3000
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  pgdata_prod:
+  redisdata_prod:
