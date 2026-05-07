@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ViewStyle, TextStyle, Pressable } from 'react-native';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { ShoppingBag, ChefHat, Bike, CheckCircle2 } from 'lucide-react-native';
 
@@ -94,6 +94,44 @@ export const OasisTextArea = ({
   );
 };
 
+export const OasisSelect = ({ 
+  label, 
+  value, 
+  onPress, 
+  placeholder, 
+  icon,
+  style,
+  disabled
+}: any) => {
+  return (
+    <View style={[styles.inputContainer, style]}>
+      {label && <Text style={styles.inputLabel}>{label}</Text>}
+      <Pressable 
+        style={({ pressed }) => [
+          styles.inputWrapper, 
+          disabled && { opacity: 0.5, backgroundColor: Colors.surfaceContainerHigh },
+          pressed && { opacity: 0.7 }
+        ]}
+        onPress={onPress}
+        disabled={disabled}
+      >
+        <View style={styles.selectContent}>
+          {icon && <View style={styles.leftIcon}>{icon}</View>}
+          <Text style={[
+            styles.selectText, 
+            !value && { color: Colors.outline }
+          ]}>
+            {value || placeholder}
+          </Text>
+        </View>
+        <View style={styles.chevron}>
+          <Text style={{ color: Colors.outline }}>▼</Text>
+        </View>
+      </Pressable>
+    </View>
+  );
+};
+
 export const KineticButton = ({ 
   title, 
   onPress, 
@@ -126,19 +164,20 @@ export const KineticButton = ({
   };
 
   return (
-    <TouchableOpacity 
-      style={[
+    <Pressable 
+      style={({ pressed }) => [
         styles.button, 
         getButtonStyle(), 
         style,
-        disabled && { opacity: 0.5, backgroundColor: Colors.surfaceContainerHigh }
+        disabled && { opacity: 0.5, backgroundColor: Colors.surfaceContainerHigh },
+        pressed && { opacity: 0.8 }
       ]} 
       onPress={onPress}
       disabled={disabled}
     >
       {icon && <View style={styles.iconContainer}>{icon}</View>}
       <Text style={[styles.buttonText, getTextStyle(), disabled && { color: Colors.outline }]}>{title}</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -151,12 +190,18 @@ export const KineticRadio = ({
   onPress: () => void; 
   label: string;
 }) => (
-  <TouchableOpacity style={styles.radioContainer} onPress={onPress}>
+  <Pressable 
+      onPress={onPress} 
+      style={({ pressed }) => [
+        styles.radioContainer, 
+        pressed && { opacity: 0.7 }
+      ]}
+    >
     <View style={[styles.radioCircle, selected && styles.radioSelected]}>
       {selected && <View style={styles.radioInnerCircle} />}
     </View>
     <Text style={styles.radioLabel}>{label}</Text>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 export const StatusBadge = ({ status }: { status: string }) => {
@@ -294,6 +339,20 @@ const styles = StyleSheet.create({
   },
   leftIcon: {
     marginRight: -4,
+  },
+  selectContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  selectText: {
+    fontSize: 16,
+    color: Colors.onSurface,
+  },
+  chevron: {
+    paddingRight: 16,
   },
   button: {
     flexDirection: 'row',

@@ -4,8 +4,10 @@ import * as storeController from '../controllers/storeController';
 const router = Router();
 
 // PUT SPECIFIC ROUTES FIRST!
+router.get('/version', storeController.getStoreVersion);
 router.get('/directory', storeController.getStoreDirectory);
 router.get('/feed', storeController.getDiscoveryFeed);
+router.post('/hydrate', storeController.hydrateStores);
 router.get('/:id/active-orders', storeController.getActiveOrders);
 
 // PUT DYNAMIC PARAMS LAST!

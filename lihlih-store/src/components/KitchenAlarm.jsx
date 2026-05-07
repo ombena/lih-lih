@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { storeAPI } from '../services/api';
-import { X, AlertTriangle, Layers, CheckSquare, Square } from 'lucide-react';
+import { X, AlertTriangle, Layers, CheckSquare, Square, MapPin } from 'lucide-react';
 
 const SOCKET_URL = 'http://localhost:3000';
 
@@ -108,6 +108,10 @@ export default function KitchenAlarm({ storeId = 1, onOrderAccepted }) {
             <div className="text-center mb-8">
               <h1 className="text-4xl font-black text-[#ae2900] uppercase animate-pulse">Nouvelle Commande!</h1>
               <span className="text-7xl font-black text-[#2c2f30]">#{incomingOrder.id}</span>
+              <div className="flex items-center justify-center gap-1.5 text-sm font-bold text-[#595c5d] mt-2">
+                <MapPin size={16} className="text-[#ae2900]" />
+                {incomingOrder.dropoff_street || "Adresse exacte (GPS)"}
+              </div>
             </div>
             <div className="bg-[#eff1f2] rounded-3xl p-6 mb-8 max-h-[35vh] overflow-y-auto">
               {incomingOrder.items?.map((item, idx) => (

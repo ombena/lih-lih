@@ -28,7 +28,13 @@ export default function KanbanBoard() {
             name: item.food_name || item.name
           })),
           notes: order.instructions || '',
-          driver: order.driver ? { name: order.driver.name } : null
+          driver: order.driver ? { name: order.driver.name } : null,
+          pickup_pin: order.pickup_pin,
+          address: {
+            wilaya: order.dropoff_wilaya,
+            baladia: order.dropoff_baladia,
+            street: order.dropoff_street
+          }
         }));
         
         setOrders(formattedOrders);

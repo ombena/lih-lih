@@ -97,15 +97,18 @@ model Order {
   store_id     Int
   driver_id    Int?     // Optional because a driver isn't assigned immediately
   status       String   @default("Pending") // Pending, Preparing, Accepted, Picked_Up, Arriving, Delivered, Cancelled
-  dropoff_lat  Decimal
-  dropoff_lng  Decimal
-  food_total   Decimal
-  delivery_fee Decimal? // Filled by the driver later
-  grand_total  Decimal? // Calculated later
-  delivery_pin String   // The 4-digit OTP for the client
-  pickup_pin   String?  // The 4-digit OTP for the store-to-driver handover
-  instructions String?  // Special requests (e.g., "No onions", "Add extra cheese")
-  created_at   DateTime @default(now())
+  dropoff_lat     Decimal
+  dropoff_lng     Decimal
+  dropoff_wilaya  String
+  dropoff_baladia String
+  dropoff_street  String?
+  food_total      Decimal
+  delivery_fee    Decimal? // Filled by the driver later
+  grand_total     Decimal? // Calculated later
+  delivery_pin    String   // The 4-digit OTP for the client
+  pickup_pin      String?  // The 4-digit OTP for the store-to-driver handover
+  instructions    String?  // Special requests (e.g., "No onions", "Add extra cheese")
+  created_at      DateTime @default(now())
   
   // Relations linking to the other tables
   client       Client   @relation(fields: [client_id], references: [id])
@@ -155,4 +158,22 @@ model Review {
   order            Order    @relation(fields: [order_id], references: [id])
   client           Client   @relation(fields: [client_id], references: [id])
   store            Store    @relation(fields: [store_id], references: [id])
+}
+
+model Wilaya {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique // e.g., "17" for Djelfa
+  name      String    @unique
+  is_active Boolean   @default(false)
+  baladias  Baladia[]
+}
+
+model Baladia {
+  id        Int     @id @default(autoincrement())
+  wilaya_id Int
+  name      String
+  is_active Boolean @default(false)
+  wilaya    Wilaya  @relation(fields: [wilaya_id], references: [id])
+
+  @@unique([wilaya_id, name])
 }

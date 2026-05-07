@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, User } from 'lucide-react';
+import { Clock, User, MapPin, Hash } from 'lucide-react';
 
 /**
  * OrderCard: Represents a single kitchen ticket.
@@ -11,11 +11,17 @@ export const OrderCard = ({ order, onReady }) => {
   return (
     <div className={`bg-white rounded-[2.5rem] p-6 shadow-sm mb-4`}>
       {/* Header: ID and Timer */}
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex justify-between items-start mb-2">
         <h3 className="text-4xl font-black tracking-tighter text-on-surface">#{order.id}</h3>
         <div className={`flex items-center font-bold px-3 py-1.5 rounded-lg text-sm ${isPreparing ? 'bg-tertiary-container text-primary' : 'bg-green-100 text-green-700'}`}>
           <Clock size={16} className="mr-1.5" /> {order.timeElapsed} min
         </div>
+      </div>
+
+      {/* Address Badge */}
+      <div className="flex items-center gap-1.5 text-sm font-bold text-[#595c5d] mb-6 bg-[#eff1f2] self-start px-3 py-1 rounded-full">
+        <MapPin size={14} className="text-[#ae2900]" />
+        {order.address.street || "Ma Position (GPS)"}
       </div>
 
       {/* Items List */}
@@ -52,12 +58,21 @@ export const OrderCard = ({ order, onReady }) => {
           Prêt
         </button>
       ) : (
-        <button 
-          disabled
-          className="w-full h-[56px] rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center bg-surface-container text-outline-variant cursor-not-allowed"
-        >
-          En attente du coursier
-        </button>
+        <div className="space-y-3">
+          <div className="bg-[#eff1f2] border-2 border-dashed border-[#ddddf9] rounded-2xl p-4 flex flex-col items-center justify-center">
+             <span className="text-[10px] font-black uppercase tracking-widest text-[#595c5d] mb-1">Code de retrait</span>
+             <div className="flex items-center gap-2">
+               <Hash size={16} className="text-[#ae2900]" />
+               <span className="text-3xl font-black tracking-tighter text-[#2c2f30]">{order.pickup_pin}</span>
+             </div>
+          </div>
+          <button 
+            disabled
+            className="w-full h-[56px] rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center bg-surface-container text-outline-variant cursor-not-allowed"
+          >
+            En attente du coursier
+          </button>
+        </div>
       )}
     </div>
   );

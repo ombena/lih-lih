@@ -64,8 +64,14 @@ export const updateProfile = async (profile: Profile): Promise<void> => {
   await saveClientData(data);
 };
 
-export const addPreset = async (preset: Preset): Promise<void> => {
+export const addPreset = async (presetData: Omit<Preset, 'id'>): Promise<void> => {
   const data = await getClientData();
+  
+  const preset: Preset = {
+    ...presetData,
+    id: Math.random().toString(36).substr(2, 9)
+  };
+
   // If it's the first preset, make it default automatically
   if (data.presets.length === 0) {
     preset.is_default = true;
@@ -110,4 +116,46 @@ export const setDefaultPreset = async (id: string): Promise<void> => {
     p.is_default = (p.id === id);
   });
   await saveClientData(data);
+};
+
+// --- DIRECTORY CACHING ---
+const DIRECTORY_CACHE_KEY = '@lihlih_store_directory';
+const DIRECTORY_VERSION_KEY = '@lihlih_directory_version';
+
+export interface StoreSummary {
+  id: number;
+  name: string;
+  image_url: string;
+  lat: number;
+  lng: number;
+  wilaya: string;
+  baladia: string;
+  tags: string;
+}
+
+export const getCachedDirectory = async (): Promise<StoreSummary[]> => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(DIRECTORY_CACHE_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+export const saveDirectoryCache = async (stores: StoreSummary[], version: number): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(DIRECTORY_CACHE_KEY, JSON.stringify(stores));
+    await AsyncStorage.setItem(DIRECTORY_VERSION_KEY, version.toString());
+  } catch (e) {
+    console.error('Failed to cache directory', e);
+  }
+};
+
+export const getLocalDirectoryVersion = async (): Promise<number> => {
+  try {
+    const version = await AsyncStorage.getItem(DIRECTORY_VERSION_KEY);
+    return version != null ? parseInt(version) : 0;
+  } catch (e) {
+    return 0;
+  }
 };

@@ -54,10 +54,14 @@ io.on('connection', (socket) => {
 
 import itemRoutes from './routes/itemRoutes';
 import reviewRoutes from './routes/reviewRoutes';
+import authRoutes from './routes/authRoutes';
+import systemRoutes from './routes/systemRoutes';
 
 // Routes
 app.use('/api/orders', orderRoutes);
 app.use('/api/stores', storeRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/system', systemRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/reviews', reviewRoutes);
 

@@ -17,6 +17,9 @@ import { Colors } from './src/components/UIPrimitives';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import StoreScreen from './src/screens/StoreScreen';
 import FloatingCartButton from './src/components/FloatingCartButton';
+import SplashScreen from './src/screens/SplashScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import { useDirectoryStore } from './src/store/directoryStore';
 
 const queryClient = new QueryClient();
 const Tab = createBottomTabNavigator();
@@ -32,6 +35,24 @@ function DiscoveryStack() {
 }
 
 export default function App() {
+  const [bootState, setBootState] = React.useState<'splash' | 'login' | 'app'>('splash');
+
+  if (bootState === 'splash') {
+    return (
+      <SplashScreen 
+        onFinish={(all, nearby) => {
+          useDirectoryStore.getState().initDirectory(all, nearby);
+          setBootState('app');
+        }} 
+        onNavigateToLogin={() => setBootState('login')}
+      />
+    );
+  }
+
+  if (bootState === 'login') {
+    return <LoginScreen onLoginSuccess={() => setBootState('splash')} />;
+  }
+
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>

@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, RefreshContr
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDiscoveryFeed } from '../hooks/useDiscoveryFeed';
 import { Colors, OasisInput, SurfaceCard } from '../components/UIPrimitives';
-import { Search, Star, ChefHat, CheckSquare, Package, Coins, Zap, ShoppingBag } from 'lucide-react-native';
+import { Search, Star, ChefHat, CheckSquare, Package, Coins, Zap, ShoppingBag, MapPin } from 'lucide-react-native';
 import { formatSocialProofNumber } from '../utils/formatters';
 import { useUnreviewedOrders } from '../hooks/useUnreviewedOrders';
 import ReviewBottomSheet from '../components/ReviewBottomSheet';
+import { getClientData } from '../services/storageService';
+import { useDirectoryStore } from '../store/directoryStore';
 
 const CLIENT_ID = 1; // MVP Hardcoded
 
@@ -25,7 +27,6 @@ const CATEGORIES = [
   "Général"
 ];
 
-
 const DEFAULT_STORE_IMAGE = require('../../assets/defaults/store-placeholder.png');
 
 export default function DiscoveryScreen() {
@@ -41,16 +42,36 @@ export default function DiscoveryScreen() {
   } = useDiscoveryFeed();
   const navigation = useNavigation<any>();
 
-  // PHASE 6: Feedback Loop Trigger
-  const { data: unreviewedOrders, refetch: refetchUnreviewed } = useUnreviewedOrders(CLIENT_ID);
-  const orderToReview = unreviewedOrders?.[0];
+  console.log('DEBUG [DiscoveryScreen]:', {
+    hasDefaultPreset: !!defaultPreset,
+    storeCount: filteredStores?.length,
+    isLoading,
+    currentArea: defaultPreset ? `${defaultPreset.wilaya}, ${defaultPreset.baladia}` : 'None'
+  });
 
-  // Force refetch when screen comes into focus (e.g. returning from OrdersScreen)
+  const { data: unreviewedOrders, refetch: refetchUnreviewed } = useUnreviewedOrders(CLIENT_ID);
+  
+  // Force refetch and LOG EVERYTHING for debugging
   useFocusEffect(
     React.useCallback(() => {
+      console.log('--- DEBUG CACHE START ---');
+      getClientData().then(data => {
+        console.log('CLIENT DATA (AsyncStorage):', JSON.stringify(data, null, 2));
+      });
+      console.log('DIRECTORY STORE (Zustand):', {
+        isLoaded: useDirectoryStore.getState().isLoaded,
+        allStoresCount: useDirectoryStore.getState().allStores.length,
+        nearbyStoresCount: useDirectoryStore.getState().nearbyStores.length,
+        sampleStore: useDirectoryStore.getState().allStores[0]
+      });
+      console.log('--- DEBUG CACHE END ---');
+
+      refetch();
       refetchUnreviewed();
-    }, [refetchUnreviewed])
+    }, [refetch, refetchUnreviewed])
   );
+
+  const orderToReview = unreviewedOrders?.[0];
 
   const getPillarRating = (sum: number, count: number) => {
     if (!count || count === 0) return "-";
@@ -76,9 +97,11 @@ export default function DiscoveryScreen() {
                 <Text style={styles.socialProofText}>
                   {formatSocialProofNumber(item.total_orders_count)} Commandes
                 </Text>
+                <Text style={styles.distanceText}>
+                  • {item.distanceKm?.toFixed(1)} km
+                </Text>
               </View>
             </View>
-
           </View>
 
           <View style={styles.pillarMeta}>
@@ -103,15 +126,34 @@ export default function DiscoveryScreen() {
               <Text style={styles.pillarText}>{getPillarRating(item.sum_speed, item.review_count)}</Text>
             </View>
              <View style={[styles.ratingBadge, { marginLeft: 'auto' }]}>
-            <Star color="#FFB800" size={24} fill="#FFB800" />
-            <Text style={styles.ratingText}>{item.rating}</Text>
-          </View>
+              <Star color="#FFB800" size={24} fill="#FFB800" />
+              <Text style={styles.ratingText}>{item.rating}</Text>
+            </View>
           </View>
         </View>
-        
       </SurfaceCard>
     </TouchableOpacity>
   );
+
+  if (!defaultPreset) {
+    return (
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyIconContainer}>
+          <MapPin color={Colors.surfaceContainerHigh} size={120} strokeWidth={1} />
+        </View>
+        <Text style={styles.emptyTitle}>Où êtes-vous ?</Text>
+        <Text style={styles.emptySubtitle}>
+          Veuillez configurer une adresse de livraison dans votre profil pour découvrir les restaurants à proximité.
+        </Text>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <Text style={styles.actionButtonText}>Configurer mon adresse</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -119,7 +161,7 @@ export default function DiscoveryScreen() {
         <OasisInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Rechercher un store, fast food, pizzeria..."
+          placeholder="Rechercher un restaurant..."
           leftIcon={<Search color={Colors.onSurfaceVariant} size={20} />}
         />
       </View>
@@ -153,8 +195,14 @@ export default function DiscoveryScreen() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
         ListEmptyComponent={
           !isLoading ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Aucun restaurant trouvé pour "{searchQuery}" dans cette zone.</Text>
+            <View style={[styles.emptyContainer, { marginTop: 40 }]}>
+              <View style={styles.emptyIconContainer}>
+                <ChefHat color={Colors.surfaceContainerHigh} size={120} strokeWidth={1} />
+              </View>
+              <Text style={styles.emptyTitle}>Aucun résultat</Text>
+              <Text style={styles.emptySubtitle}>
+                Nous n'avons trouvé aucun restaurant {searchQuery ? `pour "${searchQuery}"` : ''} dans cette zone.
+              </Text>
             </View>
           ) : null
         }
@@ -179,13 +227,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    position: 'relative',
-  },
-  searchIcon: {
-    position: 'absolute',
-    right: 32,
-    top: 36,
-    zIndex: 1,
+    marginBottom: 16,
   },
   categoriesContainer: {
     marginBottom: 16,
@@ -274,19 +316,55 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.primary,
   },
+  distanceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.onSurfaceVariant,
+  },
   pillarText: {
     fontSize: 14,
     fontWeight: '600',
     color: Colors.onSurfaceVariant,
   },
-  emptyState: {
-    padding: 32,
+  emptyContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
   },
-  emptyText: {
-    textAlign: 'center',
-    color: Colors.onSurfaceVariant,
+  emptyIconContainer: {
+    marginBottom: 24,
+    opacity: 0.5,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: Colors.onSurface,
+    marginBottom: 12,
+  },
+  emptySubtitle: {
     fontSize: 16,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
     fontWeight: '500',
+  },
+  actionButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  actionButtonText: {
+    color: Colors.onPrimary,
+    fontSize: 16,
+    fontWeight: '700',
   }
 });

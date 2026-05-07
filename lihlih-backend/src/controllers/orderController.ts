@@ -7,7 +7,17 @@ import prisma from '../prismaClient';
  * Generates OTP, calculates totals, and EMITS REAL-TIME ALARM to the store.
  */
 export const createOrder = async (req: Request, res: Response) => {
-  const { client_id, store_id, items, dropoff_lat, dropoff_lng, instructions } = req.body;
+  const { 
+    client_id, 
+    store_id, 
+    items, 
+    dropoff_lat, 
+    dropoff_lng, 
+    dropoff_wilaya,
+    dropoff_baladia,
+    dropoff_street,
+    instructions 
+  } = req.body;
 
   try {
     const deliveryPin = Math.floor(1000 + Math.random() * 9000).toString();
@@ -59,6 +69,9 @@ export const createOrder = async (req: Request, res: Response) => {
           delivery_fee: 0, 
           dropoff_lat,
           dropoff_lng,
+          dropoff_wilaya,
+          dropoff_baladia,
+          dropoff_street,
           instructions
         }
       });
@@ -116,6 +129,10 @@ export const createOrder = async (req: Request, res: Response) => {
         id: result.id,
         status: result.status,
         food_total: result.food_total,
+        dropoff_wilaya: result.dropoff_wilaya,
+        dropoff_baladia: result.dropoff_baladia,
+        dropoff_street: result.dropoff_street,
+        pickup_pin: result.pickup_pin,
         items: orderItemsData, // Sending the hydrated items so the tablet can display them
         timeElapsed: 0
       }

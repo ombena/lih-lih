@@ -62,6 +62,9 @@ export const useMultiStoreCheckout = () => {
           store_id: sId,
           dropoff_lat: defaultPreset.lat,
           dropoff_lng: defaultPreset.lng,
+          dropoff_wilaya: defaultPreset.wilaya,
+          dropoff_baladia: defaultPreset.baladia,
+          dropoff_street: defaultPreset.street,
           instructions: instructions[sId] || null, // Include instructions here
           items: storeData.items.map(item => ({
             item_id: item.id,

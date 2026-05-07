@@ -18,6 +18,20 @@ export const incrementSystemVersion = async (key: string) => {
 };
 
 /**
+ * Returns the current version of the stores directory.
+ */
+export const getStoreVersion = async (req: Request, res: Response) => {
+  try {
+    const registry = await prisma.systemRegistry.findUnique({
+      where: { key: 'stores_directory' }
+    });
+    res.json({ version: registry ? registry.version : 0 });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch directory version' });
+  }
+};
+
+/**
  * Fetches all stores from the database including their menu items.
  */
 export const getAllStores = async (req: Request, res: Response) => {
@@ -367,13 +381,44 @@ export const getStoreDirectory = async (req: Request, res: Response) => {
         name: true,
         lat: true,
         lng: true,
-        is_open: true,
+        image_url: true,
+        wilaya: true,
+        baladia: true,
+        tags: true,
       }
     });
 
+    console.log(`DEBUG [getStoreDirectory] Serving ${stores.length} stores to client.`);
     res.json(stores);
   } catch (error) {
     console.error('Error in getStoreDirectory:', error);
     res.status(500).json({ error: 'Failed to fetch store directory' });
+  }
+};
+
+/**
+ * Hydrates a list of store IDs with real-time dynamic data.
+ */
+export const hydrateStores = async (req: Request, res: Response) => {
+  const { ids } = req.body;
+
+  if (!ids || !Array.isArray(ids)) {
+    return res.status(400).json({ error: "Invalid IDs provided" });
+  }
+
+  console.log(`DEBUG [hydrateStores] Hydrating ${ids.length} stores: ${ids.join(', ')}`);
+
+  try {
+    const stores = await prisma.store.findMany({
+      where: {
+        id: { in: ids.map((id: any) => parseInt(id)) },
+        is_open: true // Only return open stores for the discovery feed
+      }
+    });
+    console.log(`DEBUG [hydrateStores] Found ${stores.length} open stores.`);
+    res.json(stores);
+  } catch (error) {
+    console.error("Hydration Error:", error);
+    res.status(500).json({ error: "Failed to hydrate stores" });
   }
 };

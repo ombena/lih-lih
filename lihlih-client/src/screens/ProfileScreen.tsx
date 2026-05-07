@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Alert, Modal, Pressable } from 'react-native';
+import { FlatList } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as Location from 'expo-location';
 import * as Crypto from 'expo-crypto';
-import * as Clipboard from 'expo-clipboard';
-import { MapPin, Trash2, Edit2, Plus } from 'lucide-react-native';
-import { SurfaceCard, OasisInput, KineticButton, KineticRadio, Colors } from '../components/UIPrimitives';
-import { getClientData, saveClientData, updateProfile, addPreset, updatePreset, deletePreset, setDefaultPreset, ClientData, Preset } from '../services/storageService';
+import { MapPin, Trash2, Plus, ChevronLeft, Check } from 'lucide-react-native';
+import { SurfaceCard, OasisInput, KineticButton, KineticRadio, Colors, OasisSelect } from '../components/UIPrimitives';
+import { getClientData, updateProfile, addPreset, deletePreset, setDefaultPreset, ClientData, Preset } from '../services/storageService';
+import { useRegionSync } from '../hooks/useRegionSync';
 
 export default function ProfileScreen() {
   const [data, setData] = useState<ClientData>({ profile: { name: '', phone_number: '' }, presets: [] });
@@ -15,11 +16,26 @@ export default function ProfileScreen() {
   const [phone, setPhone] = useState('');
   const insets = useSafeAreaInsets();
   
+  // Region Data
+  const { activeRegions, isLoading: regionsLoading } = useRegionSync();
+  const [pickerMode, setPickerMode] = useState<'wilaya' | 'baladia' | null>(null);
+
   // Modal State
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [modalPreset, setModalPreset] = useState<Partial<Preset>>({});
-  const [manualGps, setManualGps] = useState('');
   
+  const wilayas = Object.keys(activeRegions);
+  const baladias = modalPreset.wilaya ? activeRegions[modalPreset.wilaya] : [];
+
+  const handleRegionSelect = (item: string) => {
+    if (pickerMode === 'wilaya') {
+      setModalPreset({ ...modalPreset, wilaya: item, baladia: '' });
+    } else {
+      setModalPreset({ ...modalPreset, baladia: item });
+    }
+    setPickerMode(null);
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -32,19 +48,13 @@ export default function ProfileScreen() {
   };
 
   const handlePhoneChange = (text: string) => {
-    // Keep only numbers
     let cleaned = text.replace(/[^0-9]/g, '');
-    
-    // First digit must be 0
     if (cleaned.length > 0 && cleaned[0] !== '0') {
       cleaned = '0' + cleaned;
     }
-    
-    // Second digit must be 5, 6, or 7
     if (cleaned.length > 1 && !['5', '6', '7'].includes(cleaned[1])) {
       cleaned = cleaned.substring(0, 1);
     }
-    
     setPhone(cleaned);
   };
 
@@ -76,76 +86,68 @@ export default function ProfileScreen() {
   const openAddModal = () => {
     setModalPreset({
       preset_name: '',
-      wilaya: 'Laghouat', // Default or could be empty
-      baladia: 'Hassi Bahbah',
+      wilaya: '',
+      baladia: '',
       street: '',
     });
-    setManualGps('');
     bottomSheetModalRef.current?.present();
   };
 
-  const handlePasteGPS = async () => {
-    const text = await Clipboard.getStringAsync();
-    setManualGps(text);
-    
-    // Parse Google Maps URLs with @lat,lng
-    const atMatch = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (atMatch) {
-      setModalPreset(prev => ({ ...prev, lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) }));
-      return;
-    }
-    
-    // Parse Google Maps URLs with ?q=lat,lng
-    const qMatch = text.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (qMatch) {
-      setModalPreset(prev => ({ ...prev, lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) }));
-      return;
-    }
-    
-    // Parse raw coordinates like "33.1234, 4.1234"
-    const rawMatch = text.match(/^(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)$/);
-    if (rawMatch) {
-      setModalPreset(prev => ({ ...prev, lat: parseFloat(rawMatch[1]), lng: parseFloat(rawMatch[2]) }));
-      return;
-    }
-    
-    Alert.alert('Erreur', 'Aucune coordonnée valide trouvée dans le presse-papiers.');
-  };
-
   const handleCaptureGPS = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Erreur', 'Permission GPS refusée');
-      return;
+    try {
+      // 1. Check if location services are enabled at the OS level
+      const providerStatus = await Location.getProviderStatusAsync();
+      if (!providerStatus.locationServicesEnabled) {
+        Alert.alert(
+          'Services désactivés', 
+          'La localisation est désactivée sur votre appareil. Veuillez l\'activer dans les paramètres Android.'
+        );
+        return;
+      }
+
+      // 2. Request permissions
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Erreur', 'Permission GPS refusée. Veuillez l\'activer dans les paramètres de l\'application.');
+        return;
+      }
+      
+      // 3. Capture position (Balanced accuracy is better for emulators)
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setModalPreset({
+        ...modalPreset,
+        lat: location.coords.latitude,
+        lng: location.coords.longitude
+      });
+      Alert.alert('GPS Capturé', 'Position enregistrée avec succès !');
+    } catch (error: any) {
+      console.error(error);
+      const msg = error.message?.includes('unavailable') 
+        ? 'La position est indisponible. Si vous êtes sur émulateur, vous DEVEZ envoyer un point GPS via les "Extended Controls" (...) -> Location -> SEND.'
+        : 'Impossible de capter votre position.';
+      Alert.alert('Erreur GPS', msg);
     }
-    
-    let location = await Location.getCurrentPositionAsync({});
-    setModalPreset({
-      ...modalPreset,
-      lat: location.coords.latitude,
-      lng: location.coords.longitude
-    });
-    Alert.alert('GPS Capturé', 'Vos coordonnées ont été enregistrées.');
   };
 
   const handleSavePreset = async () => {
-    if (!modalPreset.preset_name || !modalPreset.lat || !modalPreset.lng) {
-      Alert.alert('Erreur', 'Veuillez remplir le nom et capturer votre position GPS.');
+    if (!modalPreset.preset_name || !modalPreset.lat || !modalPreset.lng || !modalPreset.wilaya || !modalPreset.baladia) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs et capturer votre position GPS.');
       return;
     }
 
-    const newPreset: Preset = {
-      id: Crypto.randomUUID(),
+    await addPreset({
       preset_name: modalPreset.preset_name,
-      wilaya: modalPreset.wilaya || 'Laghouat',
-      baladia: modalPreset.baladia || 'Hassi Bahbah',
+      wilaya: modalPreset.wilaya,
+      baladia: modalPreset.baladia,
       street: modalPreset.street || '',
       lat: modalPreset.lat,
       lng: modalPreset.lng,
       is_default: false
-    };
-
-    await addPreset(newPreset);
+    });
+    
     bottomSheetModalRef.current?.dismiss();
     loadData();
   };
@@ -164,145 +166,187 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.headerTitle}>Mon Profil</Text>
-          
-          <SurfaceCard>
-            <Text style={styles.sectionTitle}>Identité</Text>
-            <OasisInput 
-              label="Comment vous appelez-vous ?" 
-              value={name} 
-              onChangeText={setName} 
-              placeholder="Ex: Amine" 
-            />
-            <OasisInput 
-              label="Numéro de téléphone" 
-              value={phone} 
-              onChangeText={handlePhoneChange} 
-              placeholder="Ex: 0666112233" 
-              keyboardType="phone-pad"
-              maxLength={10}
-            />
-            <KineticButton title="Sauvegarder" onPress={handleSaveProfile} />
-          </SurfaceCard>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.headerTitle}>Mon Profil</Text>
+        
+        <SurfaceCard>
+          <Text style={styles.sectionTitle}>Identité</Text>
+          <OasisInput 
+            label="Comment vous appelez-vous ?" 
+            value={name} 
+            onChangeText={setName} 
+            placeholder="Ex: Amine" 
+          />
+          <OasisInput 
+            label="Numéro de téléphone" 
+            value={phone} 
+            onChangeText={handlePhoneChange} 
+            placeholder="Ex: 0666112233" 
+            keyboardType="phone-pad"
+            maxLength={10}
+          />
+          <KineticButton title="Sauvegarder" onPress={handleSaveProfile} />
+        </SurfaceCard>
 
-          <View style={styles.addressHeader}>
-            <Text style={styles.sectionTitle}>Mes Adresses</Text>
-            <TouchableOpacity onPress={openAddModal} style={styles.addButton}>
-              <Plus color={Colors.primary} size={20} />
-              <Text style={styles.addButtonText}>Ajouter</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.addressHeader}>
+          <Text style={styles.sectionTitle}>Mes Adresses</Text>
+          <Pressable 
+            onPress={openAddModal} 
+            style={({ pressed }) => [
+              styles.addButton,
+              pressed && { opacity: 0.7 }
+            ]}
+          >
+            <Plus color={Colors.primary} size={20} />
+            <Text style={styles.addButtonText}>Ajouter</Text>
+          </Pressable>
+        </View>
 
-          {data.presets.map((preset) => (
-            <SurfaceCard key={preset.id} style={preset.is_default ? styles.defaultCard : {}}>
-              <View style={styles.presetHeader}>
-                <View style={styles.presetTitleContainer}>
-                  <MapPin color={Colors.primary} size={20} />
-                  <Text style={styles.presetName}>{preset.preset_name}</Text>
-                </View>
-                <View style={styles.presetActions}>
-                  <TouchableOpacity onPress={() => handleDeletePreset(preset.id)}>
-                    <Trash2 color={Colors.error} size={20} />
-                  </TouchableOpacity>
-                </View>
+        {data.presets.map((preset) => (
+          <SurfaceCard key={preset.id} style={preset.is_default ? styles.defaultCard : {}}>
+            <View style={styles.presetHeader}>
+              <View style={styles.presetTitleContainer}>
+                <MapPin color={Colors.primary} size={20} />
+                <Text style={styles.presetName}>{preset.preset_name}</Text>
               </View>
-              <Text style={styles.presetDetails}>{preset.street}</Text>
-              <Text style={styles.presetSubDetails}>{preset.baladia}, {preset.wilaya}</Text>
-              
-              <View style={styles.radioWrapper}>
-                <KineticRadio 
-                  label="Définir par défaut" 
-                  selected={preset.is_default} 
-                  onPress={() => handleSetDefault(preset.id)} 
-                />
+              <View style={styles.presetActions}>
+                <Pressable 
+                  onPress={() => handleDeletePreset(preset.id)}
+                  style={({ pressed }) => [
+                    pressed && { opacity: 0.6 }
+                  ]}
+                >
+                  <Trash2 color={Colors.error} size={20} />
+                </Pressable>
               </View>
-            </SurfaceCard>
-          ))}
-
-          {data.presets.length === 0 && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Aucune adresse enregistrée.</Text>
             </View>
-          )}
-
-        </ScrollView>
-
-        <BottomSheetModal
-          ref={bottomSheetModalRef}
-          snapPoints={['80%']}
-          backdropComponent={renderBackdrop}
-          backgroundStyle={styles.bottomSheet}
-          keyboardBehavior="interactive"
-          keyboardBlurBehavior="restore"
-          bottomInset={insets.bottom}
-        >
-          <View style={[styles.modalContent, { paddingBottom: 24 }]}>
-            <Text style={styles.modalTitle}>Nouvelle Adresse</Text>
-            <BottomSheetScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
-              <OasisInput 
-                bottomSheet={true}
-                label="Nom de l'adresse" 
-                value={modalPreset.preset_name} 
-                onChangeText={(text: string) => setModalPreset({...modalPreset, preset_name: text})} 
-                placeholder="Ex: Maison, Travail..." 
+            <Text style={styles.presetDetails}>{preset.street}</Text>
+            <Text style={styles.presetSubDetails}>{preset.baladia}, {preset.wilaya}</Text>
+            
+            <View style={styles.radioWrapper}>
+              <KineticRadio 
+                label="Définir par défaut" 
+                selected={preset.is_default} 
+                onPress={() => handleSetDefault(preset.id)} 
               />
-              <OasisInput 
-                bottomSheet={true}
-                label="Wilaya" 
-                value={modalPreset.wilaya} 
-                onChangeText={(text: string) => setModalPreset({...modalPreset, wilaya: text})} 
-                placeholder="Ex: Laghouat" 
-              />
-              <OasisInput 
-                bottomSheet={true}
-                label="Baladia" 
-                value={modalPreset.baladia} 
-                onChangeText={(text: string) => setModalPreset({...modalPreset, baladia: text})} 
-                placeholder="Ex: Hassi Bahbah" 
-              />
-              <OasisInput 
-                bottomSheet={true}
-                label="Détails exacts" 
-                value={modalPreset.street} 
-                onChangeText={(text: string) => setModalPreset({...modalPreset, street: text})} 
-                placeholder="Ex: À côté de la mosquée..." 
-              />
-              
-              <View style={styles.gpsSection}>
-                <View style={styles.pasteRow}>
-                  <View style={{ flex: 1 }}>
-                    <OasisInput 
-                      bottomSheet={true}
-                      label="Coordonnées manuelles" 
-                      value={manualGps} 
-                      onChangeText={setManualGps} 
-                      placeholder="Ex: 33.801, 2.846" 
-                    />
-                  </View>
-                  <TouchableOpacity style={styles.pasteButton} onPress={handlePasteGPS}>
-                    <Text style={styles.pasteButtonText}>📋 Coller</Text>
-                  </TouchableOpacity>
-                </View>
-                
-                <Text style={styles.orDivider}>- OU -</Text>
+            </View>
+          </SurfaceCard>
+        ))}
 
-                {modalPreset.lat ? (
-                  <Text style={styles.gpsValue}>✅ Position enregistrée ({modalPreset.lat.toFixed(2)}, {modalPreset.lng?.toFixed(2)})</Text>
-                ) : (
-                  <KineticButton 
-                    title="📍 Capturer ma position actuelle" 
-                    variant="secondary"
-                    onPress={handleCaptureGPS} 
-                    style={{marginBottom: 16}}
-                  />
-                )}
-              </View>
-
-              <KineticButton title="Enregistrer l'adresse" onPress={handleSavePreset} />
-            </BottomSheetScrollView>
+        {data.presets.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>Aucune adresse enregistrée.</Text>
           </View>
-        </BottomSheetModal>
+        )}
+      </ScrollView>
+
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        snapPoints={['85%']}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={styles.bottomSheet}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        bottomInset={insets.bottom}
+      >
+        <View style={[styles.modalContent, { paddingBottom: 24 }]}>
+          <Text style={styles.modalTitle}>Nouvelle Adresse</Text>
+          <BottomSheetScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+            <OasisInput 
+              bottomSheet={true}
+              label="Nom de l'adresse" 
+              value={modalPreset.preset_name} 
+              onChangeText={(text: string) => setModalPreset({...modalPreset, preset_name: text})} 
+              placeholder="Ex: Maison, Travail..." 
+            />
+            
+            <OasisSelect
+              label="Wilaya"
+              placeholder="Sélectionnez une wilaya"
+              value={modalPreset.wilaya}
+              onPress={() => setPickerMode('wilaya')}
+              disabled={regionsLoading}
+            />
+
+            <OasisSelect
+              label="Commune (Baladia)"
+              placeholder="Sélectionnez une commune"
+              value={modalPreset.baladia}
+              onPress={() => setPickerMode('baladia')}
+              disabled={!modalPreset.wilaya || regionsLoading}
+            />
+
+            <OasisInput 
+              bottomSheet={true}
+              label="Détails exacts (Rue, N° porte...)" 
+              value={modalPreset.street} 
+              onChangeText={(text: string) => setModalPreset({...modalPreset, street: text})} 
+              placeholder="Ex: Rue 5 Juillet, Appt 12..." 
+            />
+            
+            <View style={styles.gpsSection}>
+              {modalPreset.lat ? (
+                <Text style={styles.gpsValue}>✅ Position enregistrée ({modalPreset.lat.toFixed(2)}, {modalPreset.lng?.toFixed(2)})</Text>
+              ) : (
+                <KineticButton 
+                  title="📍 Capturer ma position actuelle" 
+                  variant="secondary"
+                  onPress={handleCaptureGPS} 
+                  style={{marginBottom: 16}}
+                />
+              )}
+            </View>
+
+            <KineticButton title="Enregistrer l'adresse" onPress={handleSavePreset} />
+          </BottomSheetScrollView>
+        </View>
+      </BottomSheetModal>
+
+      <Modal visible={!!pickerMode} animationType="slide" transparent={false}>
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Pressable 
+              onPress={() => setPickerMode(null)}
+              style={({ pressed }) => [
+                pressed && { opacity: 0.6 }
+              ]}
+            >
+              <ChevronLeft color={Colors.onSurface} size={28} />
+            </Pressable>
+            <Text style={styles.modalTitleText}>
+              {pickerMode === 'wilaya' ? 'Choisir une Wilaya' : 'Choisir une Commune'}
+            </Text>
+            <View style={{ width: 28 }} />
+          </View>
+
+          <FlatList
+            data={pickerMode === 'wilaya' ? wilayas : baladias}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <Pressable 
+                style={({ pressed }) => [
+                  styles.pickerItem,
+                  pressed && { backgroundColor: Colors.surfaceContainerHigh }
+                ]} 
+                onPress={() => handleRegionSelect(item)}
+              >
+                <Text style={[
+                  styles.pickerItemText,
+                  ((pickerMode === 'wilaya' && item === modalPreset.wilaya) || 
+                   (pickerMode === 'baladia' && item === modalPreset.baladia)) && styles.pickerItemActive
+                ]}>
+                  {item}
+                </Text>
+                {((pickerMode === 'wilaya' && item === modalPreset.wilaya) || 
+                  (pickerMode === 'baladia' && item === modalPreset.baladia)) && (
+                  <Check color={Colors.primary} size={20} />
+                )}
+              </Pressable>
+            )}
+            contentContainerStyle={styles.listContent}
+          />
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -420,12 +464,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceContainerLow,
     borderRadius: 12,
   },
-  gpsLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.onSurface,
-    marginBottom: 12,
-  },
   gpsValue: {
     fontSize: 14,
     color: Colors.primary,
@@ -433,32 +471,43 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  orDivider: {
-    textAlign: 'center',
-    color: Colors.onSurfaceVariant,
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 16,
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  pasteRow: {
+  modalHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  pasteButton: {
-    backgroundColor: '#ddddf9',
-    height: 52, // Match input height roughly
-    paddingHorizontal: 16,
-    borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.surfaceContainerHigh,
+    backgroundColor: Colors.surface,
   },
-  pasteButtonText: {
-    color: '#4d4e65',
-    fontWeight: '900',
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  }
+  modalTitleText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.onSurface,
+  },
+  listContent: {
+    padding: 16,
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.surfaceContainerLow,
+  },
+  pickerItemText: {
+    fontSize: 16,
+    color: Colors.onSurface,
+    fontWeight: '500',
+  },
+  pickerItemActive: {
+    color: Colors.primary,
+    fontWeight: '700',
+  },
 });
